@@ -18,14 +18,18 @@
             --danger-color: #FF3B30; 
             --success-color: var(--electric-blue); 
             
-            --block-base-shadow: rgba(0,0,0,0.25); /* Darker shadow for wood blocks */
+            --block-base-shadow: rgba(0,0,0,0.25);
             --block-edge-highlight: rgba(255,255,255,0.1);
 
-            --game-bg: #87CEEB; /* Light Sky Blue for game canvas */
-            --perfect-stack-glow: #FFD700; /* Gold */
+            --game-bg: #87CEEB; 
+            --perfect-stack-glow: #FFD700;
 
 
             --font-main: 'Press Start 2P', cursive;
+        }
+
+        html {
+            height: 100%;
         }
 
         body {
@@ -35,13 +39,23 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 100vh;
+            justify-content: center; /* Center content vertically */
+            min-height: 100%; /* Changed from 100vh to allow scrolling if footer/ads make it taller */
             margin: 0;
-            overflow: hidden;
+            overflow-x: hidden; /* Prevent horizontal scroll */
             text-align: center;
             padding: 10px;
             box-sizing: border-box;
+            position: relative; /* For footer positioning */
+        }
+
+        .game-container { /* New wrapper for game content */
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
         }
 
         .screen {
@@ -51,7 +65,7 @@
             justify-content: center;
             width: 100%;
             max-width: 400px; 
-            padding: 20px;
+            padding: 20px 20px 0; /* Reduced bottom padding to make space for footer */
             box-sizing: border-box;
         }
         .screen.active {
@@ -176,8 +190,38 @@
             padding: 12px;
             border-radius: 3px;
             margin-top: 15px;
+            margin-bottom: 10px; /* Added margin for footer */
             border: 1px solid var(--shadow-color);
         }
+
+        .footer {
+            font-size: 0.7em;
+            color: var(--text-secondary);
+            padding: 15px 10px 10px 10px; /* Add some top padding */
+            width: 100%;
+            text-align: center;
+            /* position: absolute; 
+            bottom: 0; Remove absolute to allow it to be pushed down by ad*/
+        }
+        .footer a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Ad container styling - adjust as needed */
+        .ad-container {
+            width: 100%;
+            max-width: 320px; /* Match your ad width */
+            margin: 10px auto 5px auto; /* Center it and provide some spacing */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+             min-height: 50px; /* Match your ad height */
+        }
+
 
         @media (max-width: 480px) {
             h1 { font-size: 1.5em; }
@@ -187,41 +231,60 @@
             #gameCanvasContainer { padding: 2px; border-width: 2px; }
             #scoreDisplay, #currentHighScoreDisplay { font-size: 0.7em; padding: 6px 10px; }
             #instructions { font-size: 0.65em; line-height: 1.6;}
+            .footer { font-size: 0.6em; padding-bottom: 5px;}
         }
     </style>
 </head>
 <body>
+    <div class="game-container">
+        <div id="homeScreen" class="screen active">
+            <h1 class="logo">Pixel Wood Stacker Pro</h1>
+            <p id="homeHighScore">High Score: 0</p>
+            <button id="startGameButton">Start Game</button>
+            <div id="instructions">
+                <b><u>Mobile:</u></b><br>
+                <b>Touch & Drag</b> to Move Block<br>
+                <b>Tap Screen</b> to Drop Block<br>
+                <b><u>Desktop:</u></b><br>
+                <b>Left/Right Arrows</b> or <b>A/D</b>: Move<br>
+                <b>Space</b>, <b>Down Arrow</b>, or <b>S</b>: Drop<br>
+                Stack perfectly for max width!
+            </div>
+        </div>
 
-    <div id="homeScreen" class="screen active">
-        <h1 class="logo">Pixel Wood Stacker Pro</h1>
-        <p id="homeHighScore">High Score: 0</p>
-        <button id="startGameButton">Start Game</button>
-        <div id="instructions">
-            <b><u>Mobile:</u></b><br>
-            <b>Touch & Drag</b> to Move Block<br>
-            <b>Tap Screen</b> to Drop Block<br>
-            <b><u>Desktop:</u></b><br>
-            <b>Left/Right Arrows</b> or <b>A/D</b>: Move<br>
-            <b>Space</b>, <b>Down Arrow</b>, or <b>S</b>: Drop<br>
-            Stack perfectly for max width!
+        <div id="gameScreen" class="screen">
+            <div id="gameUI">
+                <span id="scoreDisplay">Score: 0</span>
+                <span id="currentHighScoreDisplay">High: 0</span>
+            </div>
+            <div id="gameCanvasContainer">
+                <canvas id="gameCanvas"></canvas>
+            </div>
+        </div>
+
+        <div id="gameOverScreen" class="screen">
+            <h2>Game Over!</h2>
+            <p>Final Score: <span id="finalScoreDisplay">0</span></p>
+            <button id="restartGameButton">Play Again</button>
+            <button id="backToMenuButton" class="danger">Main Menu</button>
         </div>
     </div>
 
-    <div id="gameScreen" class="screen">
-        <div id="gameUI">
-            <span id="scoreDisplay">Score: 0</span>
-            <span id="currentHighScoreDisplay">High: 0</span>
-        </div>
-        <div id="gameCanvasContainer">
-            <canvas id="gameCanvas"></canvas>
-        </div>
+    <div class="ad-container">
+        <script type="text/javascript">
+            atOptions = {
+                'key' : 'b521a39ffe233d598ed24da5a5698a18',
+                'format' : 'iframe',
+                'height' : 50,
+                'width' : 320,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/b521a39ffe233d598ed24da5a5698a18/invoke.js"></script>
     </div>
 
-    <div id="gameOverScreen" class="screen">
-        <h2>Game Over!</h2>
-        <p>Final Score: <span id="finalScoreDisplay">0</span></p>
-        <button id="restartGameButton">Play Again</button>
-        <button id="backToMenuButton" class="danger">Main Menu</button>
+    <div class="footer">
+        Powered by <a href="https://t.me/absstudiox" target="_blank" rel="noopener noreferrer">ABS StudioX</a>
     </div>
 
     <script>
@@ -244,7 +307,7 @@
         const BLOCK_HEIGHT = 20;
         const INITIAL_BLOCK_WIDTH = 120;
         const MIN_BLOCK_WIDTH = 15;
-        const BLOCK_START_Y = -BLOCK_HEIGHT; // Start off-screen
+        const BLOCK_START_Y = -BLOCK_HEIGHT; 
         
         let BASE_FALL_SPEED = 1.2;
         let currentFallSpeed = BASE_FALL_SPEED;
@@ -253,10 +316,10 @@
         const PERFECT_STACK_TOLERANCE = 2;
 
         const WOOD_COLORS = [
-            { base: '#A0522D', grainDark: '#6B3E1F', grainLight: '#D27D2D', type: 'Oak' }, // SaddleBrown tones
-            { base: '#CD853F', grainDark: '#8B5A2B', grainLight: '#F4A460', type: 'Pine' }, // Peru tones
-            { base: '#D2B48C', grainDark: '#A08C6D', grainLight: '#E0C9A6', type: 'Birch' }, // Tan tones
-            { base: '#5E4028', grainDark: '#3D2A1A', grainLight: '#7A5839', type: 'Walnut' }  // Darker wood
+            { base: '#A0522D', grainDark: '#6B3E1F', grainLight: '#D27D2D', type: 'Oak' },
+            { base: '#CD853F', grainDark: '#8B5A2B', grainLight: '#F4A460', type: 'Pine' },
+            { base: '#D2B48C', grainDark: '#A08C6D', grainLight: '#E0C9A6', type: 'Birch' },
+            { base: '#5E4028', grainDark: '#3D2A1A', grainLight: '#7A5839', type: 'Walnut' }
         ];
 
         let score = 0;
@@ -275,22 +338,39 @@
         let touchStartTime = 0;
 
         // --- Sound Effects Library ---
-        // IMPORTANT: Replace 'null' with actual Audio objects, e.g., new Audio('sounds/place.wav');
-        // Find royalty-free sounds at sites like: freesound.org, opengameart.org, or use a chiptune generator.
+        // IMPORTANT: Create these .mp3 files and place them in a 'sounds/' directory 
+        // or adjust paths. Find royalty-free sounds online.
         const sounds = {
-            start: null,   // e.g., new Audio('sounds/start.wav');
-            place: null,   // e.g., new Audio('sounds/place_wood.wav');
-            perfect: null, // e.g., new Audio('sounds/perfect_stack.wav');
-            fastDrop: null,// e.g., new Audio('sounds/fast_drop.wav');
-            fallOff: null, // e.g., new Audio('sounds/fall_off.wav');
-            gameOver: null,// e.g., new Audio('sounds/game_over_wood.wav');
-            click: null,   // e.g., new Audio('sounds/ui_click.wav');
+            start: new Audio('sounds/game_start.mp3'),      // Sound for starting the game
+            place: new Audio('sounds/block_place.mp3'),    // Sound for a block landing
+            perfect: new Audio('sounds/perfect_stack.mp3'),// Sound for a perfect stack
+            fastDrop: new Audio('sounds/fast_drop.mp3'),   // Sound for initiating fast drop
+            fallOff: new Audio('sounds/block_fall.mp3'),   // Sound for a block missing the stack
+            gameOver: new Audio('sounds/game_over.mp3'),   // Sound for game over
+            click: new Audio('sounds/ui_click.mp3'),       // Sound for UI button clicks
         };
+        // Preload attempt (basic) - can be made more robust
+        Object.values(sounds).forEach(sound => {
+            if (sound) {
+                sound.load(); // Tells the browser to start loading
+                sound.volume = 0.5; // Example: set default volume
+            }
+        });
+
 
         function playSound(soundName) {
-            if (sounds[soundName] && sounds[soundName].readyState >= 2) { // Check if ready
+            if (sounds[soundName]) {
                 sounds[soundName].currentTime = 0;
-                sounds[soundName].play().catch(e => console.warn("Audio play failed for " + soundName + ":", e));
+                sounds[soundName].play().catch(e => {
+                    // Common issue: User hasn't interacted with the page yet.
+                    // Browsers often block auto-play until interaction.
+                    // For this game, most sounds are triggered by interaction, so it's less of an issue.
+                    if (e.name === 'NotAllowedError') {
+                        console.warn(`Audio play for '${soundName}' blocked by browser. User interaction needed.`);
+                    } else {
+                        console.warn(`Audio play failed for '${soundName}':`, e);
+                    }
+                });
             }
         }
         
@@ -301,8 +381,8 @@
                 this.type = type;
                 this.size = Math.random() * size + Math.floor(size/2);
                 this.initialSize = this.size;
-                this.speedX = (Math.random() - 0.5) * speed + (Math.random() - 0.5) * 0.5; // Add slight horizontal drift
-                this.speedY = (Math.random() * -0.5 - 0.2) * speed; // Upward burst initially
+                this.speedX = (Math.random() - 0.5) * speed + (Math.random() - 0.5) * 0.5;
+                this.speedY = (Math.random() * -0.5 - 0.2) * speed; 
                 this.color = color;
                 this.life = life + Math.random() * life * 0.5; 
                 this.initialLife = this.life;
@@ -314,7 +394,7 @@
                 this.y += this.speedY;
                 this.speedY += this.gravity;
                 this.life--;
-                if (this.type === 'splinter') { // Splinters might shrink
+                if (this.type === 'splinter') { 
                     this.size = Math.max(1, this.initialSize * (this.life / this.initialLife));
                 }
             }
@@ -322,7 +402,7 @@
             draw() {
                 ctx.fillStyle = this.color;
                 const currentAlpha = Math.max(0, this.life / this.initialLife);
-                ctx.globalAlpha = currentAlpha * currentAlpha; // Fade out quadratically
+                ctx.globalAlpha = currentAlpha * currentAlpha; 
                 ctx.fillRect(Math.floor(this.x - this.size/2), Math.floor(this.y - this.size/2), Math.max(1,Math.floor(this.size)), Math.max(1,Math.floor(this.size)));
                 ctx.globalAlpha = 1;
             }
@@ -331,7 +411,7 @@
         function createParticles(x, y, count, color, size = 4, speed = 2, life = 60, particleType = 'dust') {
             for (let i = 0; i < count; i++) {
                 let pColor = color;
-                if (Array.isArray(color)) { // If color is an array, pick one randomly
+                if (Array.isArray(color)) { 
                     pColor = color[Math.floor(Math.random() * color.length)];
                 }
                 particles.push(new Particle(x, y, pColor, size, speed, life, particleType));
@@ -341,7 +421,7 @@
         function showScreen(screenElement) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             screenElement.classList.add('active');
-            playSound('click');
+            if (screenElement !== homeScreen) playSound('click'); // Avoid click sound on initial load
         }
 
         function initApp() {
@@ -351,11 +431,12 @@
 
             loadHighScore();
             updateHighScoreDisplays();
-            showScreen(homeScreen);
+            showScreen(homeScreen); // Show home screen first
 
             startGameButton.addEventListener('click', () => { playSound('start'); startGame(); });
             restartGameButton.addEventListener('click', () => { playSound('start'); startGame(); });
             backToMenuButton.addEventListener('click', () => {
+                playSound('click');
                 loadHighScore(); 
                 updateHighScoreDisplays();
                 showScreen(homeScreen);
@@ -365,13 +446,13 @@
         }
 
         function loadHighScore() {
-            highScore = parseInt(localStorage.getItem('pixelWoodStackerProHighScore')) || 0;
+            highScore = parseInt(localStorage.getItem('pixelWoodStackerProHighScore_v2')) || 0; // Added v2 for fresh highscore
         }
 
         function saveHighScore() {
             if (score > highScore) {
                 highScore = score;
-                localStorage.setItem('pixelWoodStackerProHighScore', highScore);
+                localStorage.setItem('pixelWoodStackerProHighScore_v2', highScore);
             }
         }
         
@@ -443,10 +524,11 @@
                 processBlockLanding(topStackedBlock);
             }
 
-            if (currentBlock.y > CANVAS_HEIGHT + BLOCK_HEIGHT * 3) { 
+            if (currentBlock && currentBlock.y > CANVAS_HEIGHT + BLOCK_HEIGHT * 3) { 
                 playSound('fallOff');
                 createBlockFallOffParticles(currentBlock);
-                endGame(false); // False, because game over wasn't due to a bad stack
+                currentBlock = null; // Nullify to prevent further processing before endGame
+                endGame(false); 
             }
             
             for (let i = particles.length - 1; i >= 0; i--) {
@@ -458,11 +540,13 @@
         }
         
         function createBlockFallOffParticles(block) {
+            if(!block) return;
             const particleColors = [block.colorSet.grainLight, block.colorSet.grainDark];
             createParticles(block.x + block.width / 2, CANVAS_HEIGHT, 25, particleColors, 5, 3, 70, 'splinter');
         }
 
         function processBlockLanding(topStackedBlock) {
+            if(!currentBlock) return; // Safety check
             const overlapStart = Math.max(currentBlock.x, topStackedBlock.x);
             const overlapEnd = Math.min(currentBlock.x + currentBlock.width, topStackedBlock.x + topStackedBlock.width);
             let newWidth = overlapEnd - overlapStart;
@@ -495,7 +579,7 @@
                 }
 
                 if (newWidth < MIN_BLOCK_WIDTH) { 
-                    endGame(true); // True, game over due to small stack
+                    endGame(true); 
                     return;
                 }
                 
@@ -508,7 +592,8 @@
             } else { 
                 playSound('fallOff');
                 createBlockFallOffParticles(currentBlock);
-                endGame(false); // False, game over due to missing stack
+                currentBlock = null; // Nullify to prevent further processing before endGame
+                endGame(false); 
             }
         }
         
@@ -537,35 +622,36 @@
         }
 
         function endGame(dueToSmallStack = true) {
-            if(isGameOver) return; // Prevent multiple calls
+            if(isGameOver) return;
             isGameOver = true;
             saveHighScore();
             playSound('gameOver');
 
             let explosionX, explosionY, explosionColors;
-            const lastLandedBlock = stackedBlocks[stackedBlocks.length-1];
+            const lastLandedBlock = stackedBlocks.length > 1 ? stackedBlocks[stackedBlocks.length-1] : stackedBlocks[0]; // Ensure there's a block
 
-            if (currentBlock && !dueToSmallStack) { // Block fell off screen
+            if (currentBlock && !dueToSmallStack) { 
                  explosionX = currentBlock.x + currentBlock.width/2;
                  explosionY = currentBlock.y + currentBlock.height/2;
                  explosionColors = [currentBlock.colorSet.base, currentBlock.colorSet.grainDark, currentBlock.colorSet.grainLight];
-            } else if (lastLandedBlock) { // Stack became too small or player initiated game over
+            } else if (lastLandedBlock) { 
                  explosionX = lastLandedBlock.x + lastLandedBlock.width/2;
                  explosionY = lastLandedBlock.y + lastLandedBlock.height/2;
                  explosionColors = [lastLandedBlock.colorSet.base, lastLandedBlock.colorSet.grainDark, lastLandedBlock.colorSet.grainLight];
-            } else { // Should not happen, but as a fallback
+            } else { 
                  explosionX = CANVAS_WIDTH/2;
                  explosionY = CANVAS_HEIGHT/2;
                  explosionColors = ['#888888', '#555555'];
             }
+            currentBlock = null; // Critical: Stop drawing/updating the current block
             
-            // Large "Distory" particle explosion
-            createParticles(explosionX, explosionY, 30, explosionColors, 10, 5, 100, 'splinter'); // Large chunks
-            createParticles(explosionX, explosionY, 50, explosionColors, 4, 7, 120, 'splinter');  // Smaller, faster splinters
+            createParticles(explosionX, explosionY, 30, explosionColors, 10, 5, 100, 'splinter');
+            createParticles(explosionX, explosionY, 50, explosionColors, 4, 7, 120, 'splinter');
         }
 
         function handleGameOver() {
             cancelAnimationFrame(gameLoopId);
+            gameLoopId = null; // Clear the loop ID
             finalScoreDisplay.textContent = score;
             updateHighScoreDisplays();
             showScreen(gameOverScreen);
@@ -576,7 +662,7 @@
             ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
             stackedBlocks.forEach(block => drawWoodBlock(block));
-            if (currentBlock && !isGameOver) {
+            if (currentBlock && !isGameOver) { // Only draw if not game over and exists
                 drawWoodBlock(currentBlock);
             }
             particles.forEach(p => p.draw());
@@ -591,26 +677,23 @@
             const iw = Math.floor(width);
             const ih = Math.floor(height);
 
-            // Base color
             ctx.fillStyle = colorSet.base;
             ctx.fillRect(ix, iy, iw, ih);
 
-            // Darker grain (more pixelated)
             ctx.fillStyle = colorSet.grainDark;
-            for (let gy = 0; gy < ih; gy += Math.max(2, Math.floor(ih / 5))) { // Horizontal grain lines
+            for (let gy = 0; gy < ih; gy += Math.max(2, Math.floor(ih / 5))) { 
                 if (iw > 3 && ih > 1) {
-                     const lineOffset = Math.floor(Math.random() * 3) -1; // Wavy lines
+                     const lineOffset = Math.floor(Math.random() * 3) -1; 
                      ctx.fillRect(ix + 1, Math.min(iy + ih -1, iy + gy + lineOffset), Math.max(1, iw - 2), 1);
                 }
             }
-             for (let gx = 0; gx < iw; gx += Math.max(3, Math.floor(iw / 8))) { // Short vertical grain bits
+             for (let gx = 0; gx < iw; gx += Math.max(3, Math.floor(iw / 8))) { 
                  if (iw > 2 && ih > 3) {
                     const bitHeight = Math.floor(Math.random() * (ih/2)) + 2;
                     ctx.fillRect(ix + gx, iy + Math.floor(Math.random() * (ih - bitHeight)), 1, bitHeight);
                  }
              }
 
-            // Lighter highlights/grain spots
             ctx.fillStyle = colorSet.grainLight;
             const numHighlights = Math.floor(iw * ih / 100) + 3;
             for (let k = 0; k < numHighlights; k++) {
@@ -619,17 +702,15 @@
                 }
             }
             
-            // Pixel border/shadow (darker base)
             ctx.fillStyle = 'var(--block-base-shadow)';
             if (iw > 1 && ih > 1) {
-                ctx.fillRect(ix + iw -1, iy + 1, 1, ih -1); // Right shadow
-                ctx.fillRect(ix + 1, iy + ih -1, iw -1, 1); // Bottom shadow
+                ctx.fillRect(ix + iw -1, iy + 1, 1, ih -1); 
+                ctx.fillRect(ix + 1, iy + ih -1, iw -1, 1); 
             }
-            // Softer edge highlight
             ctx.fillStyle = 'var(--block-edge-highlight)';
             if (iw > 1 && ih > 1) {
-                ctx.fillRect(ix, iy, iw, 1); // Top highlight
-                ctx.fillRect(ix, iy, 1, ih); // Left highlight
+                ctx.fillRect(ix, iy, iw, 1); 
+                ctx.fillRect(ix, iy, 1, ih); 
             }
         }
         
@@ -659,7 +740,7 @@
 
         function handleTouchStart(e) {
             if (isGameOver || !currentBlock) return;
-            e.preventDefault();
+            e.preventDefault(); // Prevent default touch actions like scrolling
             const touch = e.touches[0];
             touchStartX = touch.clientX;
             touchStartY = touch.clientY;
@@ -670,7 +751,7 @@
 
         function handleTouchMove(e) {
             if (!isDragging || isGameOver || !currentBlock) return;
-            e.preventDefault();
+            e.preventDefault(); // Prevent default touch actions like scrolling
             const touch = e.touches[0];
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
@@ -681,13 +762,15 @@
         }
 
         function handleTouchEnd(e) {
-            if (isGameOver || !currentBlock || !e.changedTouches[0]) return; // Added check for changedTouches
+            if (isGameOver || !currentBlock || !e.changedTouches[0]) return;
+            // No e.preventDefault() here to allow click-through if needed for ads after game,
+            // but it's generally good for touch-based games to prevent default actions.
             const touchDuration = Date.now() - touchStartTime;
             const touch = e.changedTouches[0];
             const deltaX = Math.abs(touch.clientX - touchStartX);
             const deltaY = Math.abs(touch.clientY - touchStartY);
 
-            if (isDragging && touchDuration < 200 && deltaX < 20 && deltaY < 20) { // Adjusted for better tap detection
+            if (isDragging && touchDuration < 200 && deltaX < 20 && deltaY < 20) { 
                 if (!currentBlock.isFastDropping) {
                     currentBlock.vy = BASE_FALL_SPEED * FAST_FALL_MULTIPLIER;
                     currentBlock.isFastDropping = true;
