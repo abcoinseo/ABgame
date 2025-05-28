@@ -2,91 +2,54 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pixel Wood Stacker ProMax</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Pixel Stacker Pro</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
         :root {
-            /* Provided Palette */
-            --bg-primary: #0A0F2C;
-            --accent-cyan: #00FFFF;
-            --text-main: #FFFFFF;
-            --electric-blue: #00BFFF;
-            --text-secondary: #B0BEC5;
-            /* --bg-gradient: defined by usage below */
+            --primary-bg: #0A0F2C; /* Website Background */
+            --secondary-bg: #1f2a40; /* Darker for containers */
+            --accent-cyan: #00FFFF; /* Logo Main Text, borders */
+            --text-main: #FFFFFF; /* General Text */
+            --electric-blue: #00BFFF; /* Buttons, interactive elements */
+            --text-secondary: #B0BEC5; /* Less important text */
+            --shadow-color: #007A7A; /* Dark Cyan for 8-bit text shadow */
+            --danger-color: #FF3B30; /* Digital Red */
+            --success-color: var(--electric-blue); /* Use electric blue for success */
+            
+            --block-border-shadow: rgba(0,0,0,0.3);
+            --game-bg: #0E162A; /* Game canvas background */
+            --perfect-stack-glow: var(--accent-cyan);
 
-            /* Derived/Helper Pixel Art Colors */
-            --pixel-border-color: #00334D; /* Darker cyan/blue for borders */
-            --pixel-border-highlight: var(--accent-cyan); 
-            --pixel-shadow-color: #000000;
-
-            --button-bg: var(--electric-blue);
-            --button-text: var(--bg-primary);
-            --button-hover-bg: var(--accent-cyan);
-            --button-hover-text: var(--bg-primary);
-            --button-active-bg: #008FCC; /* Darker electric blue */
-
-            --danger-color: #FF4136; 
-            --success-color: #00E676; 
 
             --font-main: 'Press Start 2P', cursive;
-            --pixel-size: 2px; /* Base unit for pixel effects */
-        }
-
-        * {
-            box-sizing: border-box;
         }
 
         body {
-            background-color: var(--bg-primary);
+            background-color: var(--primary-bg);
             color: var(--text-main);
             font-family: var(--font-main);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100svh; /* Use svh for better mobile viewport height */
+            min-height: 100vh;
             margin: 0;
             overflow: hidden;
             text-align: center;
             padding: 10px;
+            box-sizing: border-box;
         }
-
-        .pixel-border-outset {
-            border-style: solid;
-            border-width: calc(var(--pixel-size) * 2);
-            border-image-slice: 2;
-            border-image-width: 2;
-            border-image-repeat: stretch;
-            border-image-source: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="6" height="6"><path d="M0 0h2v2H0zM2 2h2v2H2zM4 4h2v2H4z" fill="' + encodeURIComponent(getComputedStyle(document.documentElement).getPropertyValue('--pixel-border-color').trim()) + '"/><path d="M2 0h2v2H2zM4 2h2v2H4zM0 4h2v2H0z" fill="' + encodeURIComponent(getComputedStyle(document.documentElement).getPropertyValue('--pixel-border-highlight').trim()) + '"/></svg>');
-            image-rendering: pixelated;
-            padding: calc(var(--pixel-size) * 4);
-            position: relative; /* For potential absolute positioning inside */
-            background-color: var(--bg-primary); /* Inner background */
-        }
-        
-        .pixel-box { /* Alternative simple pixel border */
-            border: var(--pixel-size) solid var(--pixel-border-color);
-            box-shadow: 
-                inset 0 0 0 var(--pixel-size) var(--pixel-border-highlight),
-                var(--pixel-size) var(--pixel-size) 0 0 var(--pixel-shadow-color), /* Bottom-right shadow */
-                calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 2) 0 0 var(--pixel-shadow-color); /* Further shadow */
-            padding: 10px;
-            background-color: #0E1A45; /* Slightly lighter than main bg for depth */
-            margin-bottom: 15px;
-        }
-
 
         .screen {
-            display: none;
+            display: none; /* Hidden by default, JS will manage visibility */
             flex-direction: column;
             align-items: center;
-            justify-content: space-around; /* Better distribution */
+            justify-content: center;
             width: 100%;
-            max-width: 420px;
-            min-height: 80svh; /* Take up more vertical space */
-            padding: 15px;
+            max-width: 400px; /* Max width for content area */
+            padding: 20px;
             box-sizing: border-box;
         }
         .screen.active {
@@ -95,188 +58,154 @@
 
         h1, h2 {
             color: var(--accent-cyan);
-            text-shadow: var(--pixel-size) var(--pixel-size) 0px var(--pixel-shadow-color);
-            line-height: 1.2;
+            text-shadow: 2px 2px 0px var(--shadow-color);
         }
-        h1 { font-size: 1.8em; margin-bottom: 20px; }
-        h2 { font-size: 1.4em; margin-bottom: 15px; }
+        h1 { font-size: 2em; margin-bottom: 20px; }
+        h2 { font-size: 1.6em; margin-bottom: 15px; }
 
         p {
-            font-size: 0.8em;
-            line-height: 1.5;
+            font-size: 0.9em;
+            line-height: 1.6;
             margin-bottom: 15px;
-            color: var(--text-secondary);
         }
-        
-        button.pixel-button {
+
+        button {
             font-family: var(--font-main);
-            background-color: var(--button-bg);
-            color: var(--button-text);
-            border: var(--pixel-size) solid var(--pixel-border-color);
-            padding: 10px 15px;
-            font-size: 0.8em;
+            background-color: var(--success-color);
+            color: var(--primary-bg); /* Dark text on light button for contrast */
+            border: none;
+            padding: 12px 20px;
+            font-size: 0.9em;
             cursor: pointer;
+            border-radius: 3px; /* Sharper edges for pixel feel */
             text-transform: uppercase;
-            box-shadow: 
-                inset 0 0 0 var(--pixel-size) var(--pixel-border-highlight), /* Inner highlight for 3D effect */
-                var(--pixel-size) var(--pixel-size) 0 0 var(--pixel-shadow-color); /* Outer shadow */
-            margin: 8px 5px;
-            min-width: 140px;
-            transition: none; /* No smooth transition for pixel art */
-            position: relative;
+            box-shadow: 0 3px 0 #008bb2; /* Darker shadow for electric blue */
+            transition: all 0.1s ease;
+            margin: 10px 5px;
+            min-width: 150px;
+            border: 1px solid var(--accent-cyan); /* Subtle border */
         }
-        button.pixel-button:hover {
-            background-color: var(--button-hover-bg);
-            color: var(--button-hover-text);
-            border-color: var(--accent-cyan);
-        }
-        button.pixel-button:active {
-            transform: translate(var(--pixel-size), var(--pixel-size));
-            box-shadow: inset 0 0 0 var(--pixel-size) var(--pixel-border-highlight); /* Remove outer shadow */
-            background-color: var(--button-active-bg);
-        }
-        button.pixel-button.danger { background-color: var(--danger-color); }
-        button.pixel-button.danger:hover { background-color: #FF6B6B; }
-        button.pixel-button.danger:active { background-color: #D92C2C; transform: translate(var(--pixel-size), var(--pixel-size)); box-shadow: inset 0 0 0 var(--pixel-size) #FFAAAA; }
+        button:hover { background-color: var(--accent-cyan); color: var(--primary-bg); box-shadow: 0 3px 0 var(--shadow-color); }
+        button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--shadow-color); }
+        
+        button.danger { background-color: var(--danger-color); box-shadow: 0 3px 0 #cc2f26; color: var(--text-main); }
+        button.danger:hover { background-color: #ff5c52; box-shadow: 0 3px 0 #c0392b; }
+        button.danger:active { transform: translateY(2px); box-shadow: 0 1px 0 #c0392b; }
 
 
         #homeScreen .logo {
-            font-size: 2.2em;
-            margin-bottom: 10px;
-        }
-        #homeScreen .game-hub-text {
-            font-size: 1.2em;
-            color: var(--text-main);
-            margin-bottom: 20px;
-        }
-        #pixelControllerIcon {
-            font-size: 2.5em; /* Make controller icon larger */
-            color: var(--electric-blue);
-            margin-bottom: 20px;
-            display: block;
+            font-size: 2.2em; /* Slightly adjusted */
+            margin-bottom: 30px;
         }
         #homeHighScore {
-            font-size: 1em;
-            background-color: var(--bg-primary);
-            padding: 8px 12px;
-            border-radius: 0; /* Sharp edges */
-            border: var(--pixel-size) solid var(--accent-cyan);
-            box-shadow: var(--pixel-size) var(--pixel-size) 0 var(--pixel-shadow-color);
+            font-size: 1.1em;
+            background-color: var(--secondary-bg);
+            padding: 10px 15px;
+            border-radius: 3px;
+            border: 2px solid var(--accent-cyan);
             margin-bottom: 25px;
-            color: var(--text-main);
+            color: var(--accent-cyan);
         }
 
         #gameCanvasContainer {
-            /* background-color: var(--bg-primary); */ /* No separate bg, canvas bg is enough */
-            border: calc(var(--pixel-size) * 2) solid var(--pixel-border-color);
-            box-shadow: 
-                inset 0 0 0 calc(var(--pixel-size)*1) var(--pixel-border-highlight), /* Inset highlight */
-                calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 2) 0 0 var(--pixel-shadow-color);
-            padding: var(--pixel-size); /* Minimal padding */
-            position: relative;
-            margin-bottom: 10px;
-            width: calc(100% - 10px);
-            max-width: 320px; /* Keep canvas pixel density reasonable */
-            aspect-ratio: 320 / 480;
-            overflow: hidden; /* Clip particles that go outside */
+            background-color: var(--secondary-bg);
+            border: 3px solid var(--accent-cyan);
+            box-shadow: 0 0 10px var(--accent-cyan), inset 0 0 8px rgba(0,0,0,0.3);
+            padding: 4px;
+            border-radius: 5px;
+            position: relative; /* For shake effect */
+            margin-bottom: 15px;
+            width: calc(100% - 8px); /* Account for padding */
+            max-width: 330px; /* Canvas width + padding + border */
+            aspect-ratio: 320 / 480; /* Maintain aspect ratio */
         }
+        
         canvas#gameCanvas {
-            background-color: #1C2759; /* Darker blue for sky, fits palette */
+            background-color: var(--game-bg); 
             display: block;
             width: 100%;
             height: 100%;
-            image-rendering: pixelated; /* Crucial for crisp pixels */
+            image-rendering: pixelated; /* Ensure crisp pixels where supported */
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
         }
 
-        .shake-effect { animation: shake 0.2s steps(4, end) infinite; }
+        .shake-effect {
+            animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+        }
         @keyframes shake {
-            0%, 100% { transform: translate(0, 0); }
-            25% { transform: translate(calc(var(--pixel-size) * -2), calc(var(--pixel-size) * 1)); }
-            50% { transform: translate(calc(var(--pixel-size) * 2), calc(var(--pixel-size) * -1)); }
-            75% { transform: translate(calc(var(--pixel-size) * -1), calc(var(--pixel-size) * 2)); }
+            10%, 90% { transform: translate3d(-1px, 0, 0) rotate(-0.2deg); }
+            20%, 80% { transform: translate3d(2px, 0, 0) rotate(0.2deg); }
+            30%, 50%, 70% { transform: translate3d(-2px, 0, 0) rotate(-0.5deg); }
+            40%, 60% { transform: translate3d(2px, 0, 0) rotate(0.5deg); }
         }
 
 
         #gameUI {
             display: flex;
-            justify-content: space-between;
+            justify-content: space-around;
             width: 100%;
-            max-width: 320px; /* Match canvas max width */
+            max-width: 320px;
             margin-bottom: 10px;
         }
         #scoreDisplay, #currentHighScoreDisplay {
-            font-size: 0.8em;
-            background-color: var(--bg-primary);
-            padding: 6px 10px;
-            border: var(--pixel-size) solid var(--accent-cyan);
-            box-shadow: var(--pixel-size) var(--pixel-size) 0 var(--pixel-shadow-color);
+            font-size: 0.9em;
+            background-color: var(--secondary-bg);
+            padding: 8px 12px;
+            border-radius: 3px;
+            border: 1px solid var(--accent-cyan);
             color: var(--text-main);
         }
+        #currentHighScoreDisplay { color: var(--text-secondary); }
 
-        #gameOverScreen p { font-size: 1em; }
-        #finalScoreDisplay { color: var(--accent-cyan); font-weight: normal; }
+
+        #gameOverScreen p {
+            font-size: 1.1em;
+        }
+        #finalScoreDisplay {
+            color: var(--accent-cyan);
+            font-weight: bold;
+            font-size: 1.2em;
+        }
         
         #instructions {
-            font-size: 0.7em;
-            max-width: 300px;
-            line-height: 1.6;
-            background-color: rgba(0,0,0,0.2);
-            padding: 8px;
-            border: var(--pixel-size) dashed var(--text-secondary);
+            font-size: 0.8em;
+            max-width: 320px;
+            line-height: 1.7;
+            background-color: rgba(0,0,0,0.25);
+            padding: 12px;
+            border-radius: 3px;
             margin-top: 15px;
-            color: var(--text-secondary);
+            border: 1px solid var(--shadow-color);
         }
 
-        #mobileControls {
-            display: none; /* Hidden by default, JS shows on touch devices */
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: rgba(0,0,0,0.5); /* Semi-transparent bar */
-            padding: 5px 0;
-            z-index: 100;
-            justify-content: space-around;
-            align-items: center;
-        }
-        #mobileControls button {
-            font-size: 1.5em; /* Larger symbols */
-            padding: 8px 15px; /* Adjust for touch */
-            min-width: 60px;
-            margin: 0 5px;
-            box-shadow: var(--pixel-size) var(--pixel-size) 0 0 var(--pixel-shadow-color);
-        }
-
+        /* Mobile specific adjustments */
         @media (max-width: 480px) {
             h1 { font-size: 1.6em; }
-            #homeScreen .logo { font-size: 2em; }
-            button.pixel-button { padding: 8px 12px; font-size: 0.7em; min-width: 120px; }
-            #scoreDisplay, #currentHighScoreDisplay { font-size: 0.7em; padding: 5px 8px; }
-            #instructions { font-size: 0.6em; }
-
-            #mobileControls button { font-size: 1.3em; padding: 6px 12px; }
+            h2 { font-size: 1.3em; }
+            #homeScreen .logo { font-size: 1.8em; }
+            button { padding: 10px 15px; font-size: 0.8em; min-width: 120px; }
+            #gameCanvasContainer { padding: 2px; border-width: 2px; }
+             #scoreDisplay, #currentHighScoreDisplay { font-size: 0.75em; padding: 6px 10px; }
+             #instructions { font-size: 0.7em; line-height: 1.6;}
         }
-        /* Force show mobile controls for testing: */
-        /* #mobileControls { display: flex; } */
 
     </style>
 </head>
 <body>
 
-    <div id="homeScreen" class="screen active pixel-box">
-        <div>
-            <h1 class="logo">AB Stacker</h1>
-            <span id="pixelControllerIcon">🎮</span> <!-- U+1F3AE VIDEO GAME -->
-            <p class="game-hub-text">Game Hub</p>
-        </div>
-        <div>
-            <p id="homeHighScore">High Score: 0</p>
-            <button id="startGameButton" class="pixel-button">Start Game</button>
-        </div>
+    <div id="homeScreen" class="screen active">
+        <h1 class="logo">Pixel Stacker Pro</h1>
+        <p id="homeHighScore">High Score: 0</p>
+        <button id="startGameButton">Start Game</button>
         <div id="instructions">
-            <b>Arrows / A,D</b>: Move<br>
-            <b>Space / S / Down</b>: Drop<br>
-            Perfect stacks keep width!
+            <b><u>Mobile:</u></b><br>
+            <b>Touch & Drag</b> to Move Block<br>
+            <b>Tap Screen</b> to Drop Block<br>
+            <b><u>Desktop:</u></b><br>
+            <b>Left/Right Arrows</b> or <b>A/D</b>: Move<br>
+            <b>Space</b>, <b>Down Arrow</b>, or <b>S</b>: Drop<br>
+            Stack perfectly for max width!
         </div>
     </div>
 
@@ -288,22 +217,14 @@
         <div id="gameCanvasContainer">
             <canvas id="gameCanvas"></canvas>
         </div>
-        <!-- Pause button can be added here if desired -->
+        <!-- <button id="pauseButton" style="display:none;">Pause (P)</button> -->
     </div>
 
-    <div id="gameOverScreen" class="screen pixel-box">
+    <div id="gameOverScreen" class="screen">
         <h2>Game Over!</h2>
         <p>Final Score: <span id="finalScoreDisplay">0</span></p>
-        <div>
-            <button id="restartGameButton" class="pixel-button">Play Again</button>
-            <button id="backToMenuButton" class="pixel-button danger">Main Menu</button>
-        </div>
-    </div>
-
-    <div id="mobileControls">
-        <button id="touchLeft" class="pixel-button">◀</button> <!-- Left Arrow: ◀ -->
-        <button id="touchDrop" class="pixel-button">▼</button> <!-- Down Arrow: ▼ -->
-        <button id="touchRight" class="pixel-button">▶</button> <!-- Right Arrow: ▶ -->
+        <button id="restartGameButton">Play Again</button>
+        <button id="backToMenuButton" class="danger">Main Menu</button>
     </div>
 
     <script>
@@ -325,32 +246,27 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        const mobileControlsDiv = document.getElementById('mobileControls');
-        const touchLeftButton = document.getElementById('touchLeft');
-        const touchRightButton = document.getElementById('touchRight');
-        const touchDropButton = document.getElementById('touchDrop');
-
         // --- Game Configuration ---
         const CANVAS_WIDTH = 320;
         const CANVAS_HEIGHT = 480;
-        const BLOCK_HEIGHT = 16; // Slightly smaller blocks for more pixel detail room
-        const INITIAL_BLOCK_WIDTH = 96; // Multiple of pixel size (e.g. 2 or 4)
-        const MIN_BLOCK_WIDTH = 8;
+        const BLOCK_HEIGHT = 20;
+        const INITIAL_BLOCK_WIDTH = 100;
+        const MIN_BLOCK_WIDTH = 10;
         const BLOCK_START_Y = 0;
         
-        let BASE_FALL_SPEED = 1.2;
+        let BASE_FALL_SPEED = 1.5;
         let currentFallSpeed = BASE_FALL_SPEED;
-        const FAST_FALL_MULTIPLIER = 6;
-        const MOVE_SPEED = 4; // Multiple of pixel size for crisp movement
-        const PERFECT_STACK_TOLERANCE = 1; // Very strict for pixel perfect
-        const PIXEL_UNIT = 2; // Visual pixel size for game elements
+        const FAST_FALL_MULTIPLIER = 6; // Slightly faster fast drop
+        const MOVE_SPEED = 7; // Keyboard move speed
+        const PERFECT_STACK_TOLERANCE = 2;
 
-        // Adjusted wood colors to fit new palette better
-        const WOOD_COLORS = [ // Base, Grain1 (Darker), Grain2 (Lighter Highlight)
-            { base: '#4A77A4', grain1: '#2E4D73', grain2: '#77AADD' }, // Bluish Wood
-            { base: '#608FB8', grain1: '#3C638A', grain2: '#89B9E0' }, // Lighter Bluish
-            { base: '#7A68A3', grain1: '#504077', grain2: '#A08CC0' }  // Purplish Wood
+        // New "Digital Block" Colors
+        const BLOCK_COLORS = [
+            { base: '#2C3E50', grainDark: '#1A2530', grainLight: '#3E5770', highlight: '#00FFFF' }, // Dark Slate Blue base
+            { base: '#3498DB', grainDark: '#217DBB', grainLight: '#5DADE2', highlight: '#00BFFF' }, // Peter River Blue base
+            { base: '#607D8B', grainDark: '#455A64', grainLight: '#78909C', highlight: '#B0BEC5' }  // Blue Grey base
         ];
+
 
         // --- Game State ---
         let score = 0;
@@ -361,37 +277,61 @@
         let gameLoopId = null;
         let particles = [];
         let difficultyLevel = 0;
-        let isTouchDevice = false;
-        let touchMoveState = { left: false, right: false };
 
+        // Touch state for mobile controls
+        let touchStartX = 0;
+        let touchStartY = 0; // For swipe detection
+        let initialBlockX = 0;
+        let isDragging = false;
+        let touchStartTime = 0;
 
-        // --- Particle System (Square Particles) ---
+        // --- Sound Effects Stubs ---
+        const sounds = {
+            place: null, // e.g., new Audio('sounds/place.wav');
+            perfect: null, // e.g., new Audio('sounds/perfect.wav');
+            gameOver: null, // e.g., new Audio('sounds/gameOver.wav');
+            fallOff: null, // e.g., new Audio('sounds/fallOff.wav');
+            click: null, // e.g., new Audio('sounds/click.wav');
+        };
+
+        function playSound(soundName) {
+            if (sounds[soundName]) {
+                sounds[soundName].currentTime = 0;
+                sounds[soundName].play().catch(e => console.warn("Audio play failed for " + soundName + ":", e));
+            } // else console.log(`Debug: Play sound ${soundName}`);
+        }
+        
+        // --- Particle System ---
         class Particle {
-            constructor(x, y, color, size) {
+            constructor(x, y, color, size, speed, life = 60) {
                 this.x = x;
                 this.y = y;
-                this.size = (Math.random() * size + PIXEL_UNIT) - ((Math.random() * size + PIXEL_UNIT) % PIXEL_UNIT); // Ensure multiple of PIXEL_UNIT
-                this.speedX = (Math.random() - 0.5) * (PIXEL_UNIT * 2);
-                this.speedY = (Math.random() * -2 - 0.5) * PIXEL_UNIT; // Bias upwards
+                this.size = Math.random() * size + Math.floor(size/2);
+                this.speedX = (Math.random() - 0.5) * speed;
+                this.speedY = (Math.random() - 0.5) * speed - (speed * 0.2); // Slight upward bias
                 this.color = color;
-                this.life = 60; // Frames
+                this.life = life; // Frames
+                this.initialLife = life;
             }
+
             update() {
                 this.x += this.speedX;
                 this.y += this.speedY;
-                this.speedY += 0.1 * PIXEL_UNIT; // Gravity
+                this.speedY += 0.05; // Gravity on particles
                 this.life--;
             }
+
             draw() {
                 ctx.fillStyle = this.color;
-                ctx.globalAlpha = Math.max(0, this.life / 60);
-                ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+                ctx.globalAlpha = Math.max(0, this.life / this.initialLife);
+                ctx.fillRect(Math.floor(this.x), Math.floor(this.y), Math.max(1,Math.floor(this.size)), Math.max(1,Math.floor(this.size)));
                 ctx.globalAlpha = 1;
             }
         }
-        function createParticles(x, y, count, color, baseSize = PIXEL_UNIT * 2) {
+
+        function createParticles(x, y, count, color, size = 4, speed = 2, life = 60) {
             for (let i = 0; i < count; i++) {
-                particles.push(new Particle(x, y, color, baseSize));
+                particles.push(new Particle(x, y, color, size, speed, life));
             }
         }
 
@@ -399,6 +339,7 @@
         function showScreen(screenElement) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             screenElement.classList.add('active');
+            playSound('click'); // Sound for screen transitions
         }
 
         // --- Initialization ---
@@ -407,149 +348,168 @@
             canvas.height = CANVAS_HEIGHT;
             ctx.imageSmoothingEnabled = false; // Crucial for pixel art
 
-            isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
-            if (isTouchDevice) {
-                mobileControlsDiv.style.display = 'flex';
-            }
-
             loadHighScore();
             updateHighScoreDisplays();
             showScreen(homeScreen);
 
-            startGameButton.addEventListener('click', startGame);
-            restartGameButton.addEventListener('click', startGame);
+            startGameButton.addEventListener('click', () => { playSound('click'); startGame(); });
+            restartGameButton.addEventListener('click', () => { playSound('click'); startGame(); });
             backToMenuButton.addEventListener('click', () => {
-                loadHighScore(); updateHighScoreDisplays(); showScreen(homeScreen);
+                playSound('click');
+                loadHighScore(); 
+                updateHighScoreDisplays();
+                showScreen(homeScreen);
             });
             
             setupInputListeners();
         }
 
-        function loadHighScore() { highScore = parseInt(localStorage.getItem('pixelStackerProMaxHS')) || 0; }
-        function saveHighScore() {
-            if (score > highScore) { highScore = score; localStorage.setItem('pixelStackerProMaxHS', highScore); }
+        function loadHighScore() {
+            highScore = parseInt(localStorage.getItem('pixelStackerProHighScore')) || 0;
         }
+
+        function saveHighScore() {
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('pixelStackerProHighScore', highScore);
+            }
+        }
+        
         function updateHighScoreDisplays() {
             homeHighScoreDisplay.textContent = `High Score: ${highScore}`;
             currentHighScoreDisplay.textContent = `High: ${highScore}`;
         }
 
         function startGame() {
-            isGameOver = false; score = 0; difficultyLevel = 0;
-            BASE_FALL_SPEED = 1.2; currentFallSpeed = BASE_FALL_SPEED;
-            stackedBlocks = []; particles = [];
-            updateScoreDisplay(); updateHighScoreDisplays();
+            isGameOver = false;
+            score = 0;
+            difficultyLevel = 0;
+            BASE_FALL_SPEED = 1.5; 
+            currentFallSpeed = BASE_FALL_SPEED;
+            stackedBlocks = [];
+            particles = [];
+            updateScoreDisplay();
+            updateHighScoreDisplays();
             
-            const baseBlockWidth = CANVAS_WIDTH * 0.8 - ( (CANVAS_WIDTH * 0.8) % (PIXEL_UNIT * 2) ); // Multiple of pixel unit
+            const baseBlockWidth = CANVAS_WIDTH * 0.85; 
             const baseBlock = {
                 x: (CANVAS_WIDTH - baseBlockWidth) / 2,
                 y: CANVAS_HEIGHT - BLOCK_HEIGHT,
-                width: baseBlockWidth, height: BLOCK_HEIGHT, colorSet: getRandomWoodColor()
+                width: baseBlockWidth,
+                height: BLOCK_HEIGHT,
+                colorSet: getRandomBlockColor()
             };
             stackedBlocks.push(baseBlock);
+
             spawnNewBlock(INITIAL_BLOCK_WIDTH);
             
             if (gameLoopId) cancelAnimationFrame(gameLoopId);
             gameLoop();
+
             showScreen(gameScreen);
         }
         
-        function getRandomWoodColor() { return WOOD_COLORS[Math.floor(Math.random() * WOOD_COLORS.length)]; }
+        function getRandomBlockColor() {
+            return BLOCK_COLORS[Math.floor(Math.random() * BLOCK_COLORS.length)];
+        }
 
         function spawnNewBlock(width) {
-            let newWidth = Math.max(width, MIN_BLOCK_WIDTH);
-            newWidth = newWidth - (newWidth % PIXEL_UNIT); // Ensure multiple of pixel unit
-
             currentBlock = {
-                x: (Math.random() * (CANVAS_WIDTH - newWidth)) - ((Math.random() * (CANVAS_WIDTH - newWidth)) % PIXEL_UNIT),
-                y: BLOCK_START_Y - BLOCK_HEIGHT,
-                width: newWidth, height: BLOCK_HEIGHT, colorSet: getRandomWoodColor(),
-                vy: currentFallSpeed, isFastDropping: false
+                x: Math.random() * (CANVAS_WIDTH - width), 
+                y: BLOCK_START_Y - BLOCK_HEIGHT, 
+                width: Math.max(width, MIN_BLOCK_WIDTH),
+                height: BLOCK_HEIGHT,
+                colorSet: getRandomBlockColor(),
+                vy: currentFallSpeed,
+                isFastDropping: false
             };
         }
         
         function gameLoop() {
-            if (isGameOver) { handleGameOver(); return; }
-            updateGame(); drawGame();
+            if (isGameOver) {
+                handleGameOver();
+                return;
+            }
+            updateGame();
+            drawGame();
             gameLoopId = requestAnimationFrame(gameLoop);
         }
 
         function updateGame() {
             if (!currentBlock) return;
-
-            // Handle touch movement
-            if (isTouchDevice) {
-                if (touchMoveState.left) moveCurrentBlock(-MOVE_SPEED);
-                if (touchMoveState.right) moveCurrentBlock(MOVE_SPEED);
-            }
-
             currentBlock.y += currentBlock.vy;
-            currentBlock.y = Math.round(currentBlock.y / PIXEL_UNIT) * PIXEL_UNIT; // Snap to pixel grid
 
             const topStackedBlock = stackedBlocks[stackedBlocks.length - 1];
             if (currentBlock.y + currentBlock.height >= topStackedBlock.y) {
                 processBlockLanding(topStackedBlock);
             }
-            if (currentBlock.y > CANVAS_HEIGHT + BLOCK_HEIGHT) endGame();
+
+            if (currentBlock.y > CANVAS_HEIGHT + BLOCK_HEIGHT * 2) { // Allow to fall a bit more off-screen
+                playSound('fallOff');
+                endGame();
+            }
             
-            particles.forEach((p, i) => { p.update(); if (p.life <= 0) particles.splice(i, 1); });
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
         }
-
-        function moveCurrentBlock(deltaX) {
-            if (!currentBlock) return;
-            currentBlock.x += deltaX;
-            // Snap to pixel grid and constrain
-            currentBlock.x = Math.round(currentBlock.x / PIXEL_UNIT) * PIXEL_UNIT;
-            currentBlock.x = Math.max(0, Math.min(currentBlock.x, CANVAS_WIDTH - currentBlock.width));
-        }
-        
-        function fastDropCurrentBlock() {
-            if (!currentBlock || currentBlock.isFastDropping) return;
-            currentBlock.vy = BASE_FALL_SPEED * FAST_FALL_MULTIPLIER;
-            currentBlock.isFastDropping = true;
-        }
-
 
         function processBlockLanding(topStackedBlock) {
             const overlapStart = Math.max(currentBlock.x, topStackedBlock.x);
             const overlapEnd = Math.min(currentBlock.x + currentBlock.width, topStackedBlock.x + topStackedBlock.width);
             let newWidth = overlapEnd - overlapStart;
-            newWidth = Math.floor(newWidth / PIXEL_UNIT) * PIXEL_UNIT; // Ensure pixel perfect width
 
-            if (newWidth >= PIXEL_UNIT) {
+            if (newWidth > 0) { 
                 currentBlock.y = topStackedBlock.y - BLOCK_HEIGHT;
                 currentBlock.x = overlapStart;
                 currentBlock.width = newWidth;
                 
                 stackedBlocks.push({...currentBlock});
-                score++; updateScoreDisplay(); updateDifficulty();
-                createParticles(currentBlock.x + newWidth / 2, currentBlock.y, 5 + Math.floor(newWidth/16), currentBlock.colorSet.grain2, PIXEL_UNIT * 2);
+                score++;
+                updateScoreDisplay();
+                updateDifficulty();
+                playSound('place');
+                createParticles(currentBlock.x + newWidth / 2, currentBlock.y, 5 + Math.floor(newWidth/15), currentBlock.colorSet.grainLight, 3, 1.5);
 
                 const alignmentDiff = Math.abs(currentBlock.x - topStackedBlock.x);
                 if (alignmentDiff <= PERFECT_STACK_TOLERANCE && newWidth >= topStackedBlock.width - PERFECT_STACK_TOLERANCE) {
-                    newWidth = topStackedBlock.width; // Perfect stack!
-                    createParticles(currentBlock.x + newWidth / 2, currentBlock.y, 10, var(--accent-cyan), PIXEL_UNIT * 3);
+                    newWidth = topStackedBlock.width; 
+                    currentBlock.width = newWidth; // Correct the width in the currentBlock object if it's perfect
+                    stackedBlocks[stackedBlocks.length-1].width = newWidth; // Also update the one in the stack
+                    
+                    playSound('perfect');
+                    createParticles(currentBlock.x + newWidth / 2, currentBlock.y, 15, 'var(--perfect-stack-glow)', 5, 2.5, 70);
                 } else {
-                    triggerScreenShake(150);
+                    triggerScreenShake(120, 1.5);
                 }
 
-                if (newWidth < MIN_BLOCK_WIDTH) { endGame(); return; }
+                if (newWidth < MIN_BLOCK_WIDTH) { 
+                    playSound('fallOff');
+                    endGame();
+                    return;
+                }
+                
                 spawnNewBlock(newWidth);
                 
-                if (stackedBlocks.length > 10 && stackedBlocks[stackedBlocks.length -1].y < CANVAS_HEIGHT * 0.5) {
+                if (stackedBlocks.length > 7 && stackedBlocks[stackedBlocks.length -1].y < CANVAS_HEIGHT * 0.35) {
                     shiftBlocksDown();
                 }
-            } else {
-                createParticles(currentBlock.x + currentBlock.width / 2, currentBlock.y + currentBlock.height, 20, currentBlock.colorSet.base, PIXEL_UNIT * 3);
+
+            } else { 
+                playSound('fallOff');
+                createParticles(currentBlock.x + currentBlock.width / 2, currentBlock.y + currentBlock.height, 20, currentBlock.colorSet.base, 5, 3);
                 endGame();
             }
         }
         
         function updateDifficulty() {
-            if (score > 0 && score % 4 === 0 && difficultyLevel < 10) { // Cap difficulty increase
+            if (score > 0 && score % 4 === 0 && difficultyLevel < 15) { // Cap difficulty increase
                 difficultyLevel++;
-                BASE_FALL_SPEED = Math.min(BASE_FALL_SPEED + 0.1, 3.0);
-                currentFallSpeed = currentBlock.isFastDropping ? BASE_FALL_SPEED * FAST_FALL_MULTIPLIER : BASE_FALL_SPEED;
+                BASE_FALL_SPEED = Math.min(BASE_FALL_SPEED + 0.1, 4); 
+                currentFallSpeed = currentBlock && currentBlock.isFastDropping ? BASE_FALL_SPEED * FAST_FALL_MULTIPLIER : BASE_FALL_SPEED;
                 if(currentBlock) currentBlock.vy = currentFallSpeed;
             }
         }
@@ -557,92 +517,197 @@
         function shiftBlocksDown() {
             const shiftAmount = BLOCK_HEIGHT * 2;
             stackedBlocks.forEach(block => block.y += shiftAmount);
+            currentBlock.y += shiftAmount; // Also shift current block to maintain relative position
+            particles.forEach(p => p.y += shiftAmount); // Shift particles too
+
             stackedBlocks = stackedBlocks.filter(block => block.y < CANVAS_HEIGHT + BLOCK_HEIGHT * 3);
         }
 
-        let shakeTimeout;
-        function triggerScreenShake(duration = 200) {
+        function triggerScreenShake(duration = 200, intensity = 2) { // Intensity not directly used, CSS keyframes are fixed
             gameCanvasContainer.classList.add('shake-effect');
-            clearTimeout(shakeTimeout);
-            shakeTimeout = setTimeout(() => gameCanvasContainer.classList.remove('shake-effect'), duration);
+            setTimeout(() => {
+                gameCanvasContainer.classList.remove('shake-effect');
+            }, duration);
         }
 
         function endGame() {
-            isGameOver = true; saveHighScore();
-            if (currentBlock) createParticles(currentBlock.x + currentBlock.width/2, currentBlock.y + currentBlock.height/2, 40, var(--danger-color), PIXEL_UNIT * 4);
+            isGameOver = true;
+            saveHighScore();
+            playSound('gameOver');
+            if (currentBlock) {
+                 createParticles(currentBlock.x + currentBlock.width/2, currentBlock.y + currentBlock.height/2, 40, 'var(--danger-color)', 7, 4, 80);
+            } else if (stackedBlocks.length > 0) {
+                const lastBlock = stackedBlocks[stackedBlocks.length-1];
+                 createParticles(lastBlock.x + lastBlock.width/2, lastBlock.y + lastBlock.height/2, 40, 'var(--danger-color)', 7, 4, 80);
+            }
         }
+
         function handleGameOver() {
             cancelAnimationFrame(gameLoopId);
-            finalScoreDisplay.textContent = score; updateHighScoreDisplays();
+            finalScoreDisplay.textContent = score;
+            updateHighScoreDisplays();
             showScreen(gameOverScreen);
         }
 
         function drawGame() {
-            ctx.fillStyle = canvas.style.backgroundColor; // From CSS
+            ctx.fillStyle = 'var(--game-bg)';
             ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-            stackedBlocks.forEach(block => drawPixelArtBlock(block));
-            if (currentBlock && !isGameOver) drawPixelArtBlock(currentBlock);
+
+            stackedBlocks.forEach(block => drawBlock(block));
+            if (currentBlock && !isGameOver) {
+                drawBlock(currentBlock);
+            }
+            
+            // Draw particles last so they are on top
             particles.forEach(p => p.draw());
         }
 
-        function drawPixelArtBlock(block) {
+        function drawBlock(block) {
             const { x, y, width, height, colorSet } = block;
-            if (y + height < 0 || y > CANVAS_HEIGHT) return;
+            if (y + height < -BLOCK_HEIGHT*2 || y > CANVAS_HEIGHT + BLOCK_HEIGHT*2) return; // Culling
+
+            const ix = Math.floor(x);
+            const iy = Math.floor(y);
+            const iw = Math.floor(width);
+            const ih = Math.floor(height);
 
             // Base color
             ctx.fillStyle = colorSet.base;
-            ctx.fillRect(x, y, width, height);
+            ctx.fillRect(ix, iy, iw, ih);
 
-            // Simple pixel grain (horizontal lines)
-            ctx.fillStyle = colorSet.grain1; // Darker grain
-            for (let r = PIXEL_UNIT; r < height - PIXEL_UNIT; r += PIXEL_UNIT * 2) {
-                ctx.fillRect(x, y + r, width, PIXEL_UNIT);
-            }
-
-            // Highlights (dots or small patches)
-            ctx.fillStyle = colorSet.grain2; // Lighter highlight
-            const numHighlights = Math.floor((width * height) / (PIXEL_UNIT * PIXEL_UNIT * 50)); // Density
-            for (let i = 0; i < numHighlights; i++) {
-                if (width > PIXEL_UNIT && height > PIXEL_UNIT) {
-                    const hx = x + (Math.floor(Math.random() * (width / PIXEL_UNIT)) * PIXEL_UNIT);
-                    const hy = y + (Math.floor(Math.random() * (height / PIXEL_UNIT)) * PIXEL_UNIT);
-                    ctx.fillRect(hx, hy, PIXEL_UNIT, PIXEL_UNIT);
+            // Darker "pixel" grain - simple pattern
+            ctx.fillStyle = colorSet.grainDark;
+            for (let gx = 0; gx < iw; gx += 4) {
+                for (let gy = 0; gy < ih; gy += 4) {
+                    if ((Math.floor(gx / 4) + Math.floor(gy / 4)) % 2 === 0 && iw > 2 && ih > 2) {
+                        ctx.fillRect(ix + gx, iy + gy, Math.min(2, iw - gx), Math.min(2, ih - gy));
+                    }
                 }
             }
             
-            // Pixel Border (darker outline)
-            ctx.fillStyle = var(--pixel-shadow-color); // Black outline
-            // Top & Bottom
-            ctx.fillRect(x, y, width, PIXEL_UNIT);
-            ctx.fillRect(x, y + height - PIXEL_UNIT, width, PIXEL_UNIT);
-            // Left & Right
-            ctx.fillRect(x, y + PIXEL_UNIT, PIXEL_UNIT, height - PIXEL_UNIT * 2);
-            ctx.fillRect(x + width - PIXEL_UNIT, y + PIXEL_UNIT, PIXEL_UNIT, height - PIXEL_UNIT * 2);
+            // Lighter "pixel" highlights
+            ctx.fillStyle = colorSet.grainLight;
+            const numHighlights = Math.floor(iw * ih / 80);
+            for (let k = 0; k < numHighlights; k++) {
+                if (iw > 1 && ih > 1) {
+                    ctx.fillRect(ix + Math.floor(Math.random() * (iw - 1)), iy + Math.floor(Math.random() * (ih - 1)), 1, 1);
+                }
+            }
+
+            // Pixel border/shadow effect (more subtle)
+            ctx.fillStyle = 'var(--block-border-shadow)';
+            if (iw > 2 && ih > 2) {
+                ctx.fillRect(ix + iw - 1, iy + 1, 1, ih - 2); // Right thin line
+                ctx.fillRect(ix + 1, iy + ih - 1, iw - 2, 1); // Bottom thin line
+            }
+            // Highlight top/left edges with a lighter color from the set
+            ctx.fillStyle = colorSet.highlight;
+             if (iw > 1 && ih > 1) {
+                ctx.fillRect(ix, iy, iw, 1); // Top highlight
+                ctx.fillRect(ix, iy, 1, ih); // Left highlight
+            }
         }
         
-        function updateScoreDisplay() { scoreDisplay.textContent = `Score: ${score}`; }
-
-        function setupInputListeners() {
-            window.addEventListener('keydown', (e) => {
-                if (isGameOver || !currentBlock) return;
-                let keyProcessed = true;
-                switch (e.key.toLowerCase()) {
-                    case 'arrowleft': case 'a': moveCurrentBlock(-MOVE_SPEED); break;
-                    case 'arrowright': case 'd': moveCurrentBlock(MOVE_SPEED); break;
-                    case 'arrowdown': case 's': case ' ': fastDropCurrentBlock(); break;
-                    default: keyProcessed = false;
-                }
-                if (keyProcessed) e.preventDefault();
-            });
-
-            // Touch controls
-            touchLeftButton.addEventListener('touchstart', (e) => { e.preventDefault(); touchMoveState.left = true; });
-            touchLeftButton.addEventListener('touchend', (e) => { e.preventDefault(); touchMoveState.left = false; });
-            touchRightButton.addEventListener('touchstart', (e) => { e.preventDefault(); touchMoveState.right = true; });
-            touchRightButton.addEventListener('touchend', (e) => { e.preventDefault(); touchMoveState.right = false; });
-            touchDropButton.addEventListener('touchstart', (e) => { e.preventDefault(); fastDropCurrentBlock(); });
+        function updateScoreDisplay() {
+            scoreDisplay.textContent = `Score: ${score}`;
         }
 
+        // --- Input Handling (Keyboard & Touch) ---
+        function handleKeyDown(e) {
+            if (isGameOver || !currentBlock) return;
+
+            let keyProcessed = true;
+            switch (e.key.toLowerCase()) {
+                case 'arrowleft':
+                case 'a':
+                    currentBlock.x -= MOVE_SPEED;
+                    break;
+                case 'arrowright':
+                case 'd':
+                    currentBlock.x += MOVE_SPEED;
+                    break;
+                case 'arrowdown':
+                case 's':
+                case ' ': 
+                    if (!currentBlock.isFastDropping) {
+                        currentBlock.vy = BASE_FALL_SPEED * FAST_FALL_MULTIPLIER;
+                        currentBlock.isFastDropping = true;
+                    }
+                    break;
+                default:
+                    keyProcessed = false;
+            }
+            if (keyProcessed) e.preventDefault();
+
+            // Constrain block within canvas bounds for keyboard
+            if (currentBlock.x < 0) currentBlock.x = 0;
+            if (currentBlock.x + currentBlock.width > CANVAS_WIDTH) {
+                currentBlock.x = CANVAS_WIDTH - currentBlock.width;
+            }
+        }
+
+        function handleTouchStart(e) {
+            if (isGameOver || !currentBlock) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            initialBlockX = currentBlock.x;
+            isDragging = true;
+            touchStartTime = Date.now();
+        }
+
+        function handleTouchMove(e) {
+            if (!isDragging || isGameOver || !currentBlock) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+
+            // Calculate movement relative to canvas pixels
+            const touchCurrentX = touch.clientX;
+            const deltaXViewport = touchCurrentX - touchStartX;
+            const deltaXCanvas = deltaXViewport * scaleX;
+            
+            currentBlock.x = initialBlockX + deltaXCanvas;
+
+            // Constrain block within canvas bounds for touch
+            if (currentBlock.x < 0) currentBlock.x = 0;
+            if (currentBlock.x + currentBlock.width > CANVAS_WIDTH) {
+                currentBlock.x = CANVAS_WIDTH - currentBlock.width;
+            }
+        }
+
+        function handleTouchEnd(e) {
+            if (isGameOver || !currentBlock) return;
+            // e.preventDefault(); // Can sometimes prevent other desired behaviors like scroll after game, use cautiously
+            
+            const touchDuration = Date.now() - touchStartTime;
+            const touch = e.changedTouches[0];
+            const deltaX = Math.abs(touch.clientX - touchStartX);
+            const deltaY = Math.abs(touch.clientY - touchStartY);
+
+            // Simple tap detection: short duration and minimal movement
+            if (isDragging && touchDuration < 250 && deltaX < 15 && deltaY < 15) {
+                if (!currentBlock.isFastDropping) {
+                    currentBlock.vy = BASE_FALL_SPEED * FAST_FALL_MULTIPLIER;
+                    currentBlock.isFastDropping = true;
+                }
+            }
+            isDragging = false;
+        }
+
+        function setupInputListeners() {
+            window.addEventListener('keydown', handleKeyDown);
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+        }
+
+        // --- Start App ---
         window.addEventListener('load', initApp);
     </script>
 </body>
