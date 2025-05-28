@@ -32,7 +32,7 @@
             <h1>ABS Block Ninja</h1>
             <button type="button" class="play-normal-btn">PLAY GAME</button>
             <button type="button" class="play-casual-btn">CASUAL MODE</button>
-            <div class="credits">Powerd By  <a href="https://t.me/absstudiox" target="_blank" rel="noopener noreferrer">ABS StudioX</a></div>
+            <div class="credits">Powered By  <a href="https://t.me/absstudiox" target="_blank" rel="noopener noreferrer">ABS StudioX</a></div>
         </div>
         <div class="menu menu--pause">
             <h1>Paused</h1>
@@ -49,7 +49,31 @@
         </div>
     </div>
 
+    <!-- This is where the ad will be rendered by the script -->
+    <!-- You might want to wrap it in a div for styling -->
+    <div id="ad-container-footer" style="text-align: center; padding: 10px 0;">
+        <!-- The script will likely inject an iframe here -->
+    </div>
+
     <script src="script.js" defer></script>
     <!-- 'defer' ensures script runs after HTML is parsed -->
+
+    <!-- YOUR NEW SCRIPT - Placed before closing body -->
+    <script type="text/javascript">
+        atOptions = {
+            'key' : 'b521a39ffe233d598ed24da5a5698a18',
+            'format' : 'iframe',
+            'height' : 50, // This ad will be 50px high
+            'width' : 320,  // This ad will be 320px wide
+            'params' : {}
+        };
+        // This will attempt to place the ad content where the script tag is,
+        // or you can sometimes specify a container.
+        // If it doesn't automatically go into 'ad-container-footer',
+        // this script might just write the iframe where it sits.
+    </script>
+    <script type="text/javascript" src="//www.highperformanceformat.com/b521a39ffe233d598ed24da5a5698a18/invoke.js"></script>
+    <!-- END OF YOUR NEW SCRIPT -->
+
 </body>
 </html>
