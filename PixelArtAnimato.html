@@ -2,164 +2,224 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Pixel Art Animator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Pro Pixel Art & Animation Studio v2</title>
     <style>
+        :root {
+            --bg-color: #2c3e50; /* Darker blue-gray */
+            --panel-bg: #34495e; /* Slightly lighter panel */
+            --text-color: #ecf0f1;
+            --accent-color: #3498db; /* Bright blue */
+            --accent-hover: #2980b9;
+            --border-color: #7f8c8d;
+            --input-bg: #2c3e50;
+            --active-item-bg: var(--accent-color);
+            --danger-color: #e74c3c;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             margin: 0;
-            padding: 20px;
-            background-color: #333;
-            color: #f0f0f0;
-            touch-action: none; /* Prevent default touch actions like scrolling on canvas */
+            padding: 10px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            touch-action: manipulation; /* Better touch handling */
+            overflow-x: hidden; /* Prevent horizontal scroll on small screens */
         }
 
-        .container {
-            display: flex;
-            gap: 20px;
-            width: 100%;
-            max-width: 1200px;
-            flex-wrap: wrap; /* Allow wrapping for smaller screens */
+        h1, h3 {
+            color: var(--accent-color);
+            text-align: center;
         }
-
-        .left-panel, .right-panel {
-            background-color: #444;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-
-        .left-panel {
-            flex: 1;
-            min-width: 300px; /* Ensure tools are readable */
-        }
-
-        .canvas-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            flex: 2; /* Canvas takes more space */
-            position: relative; /* For onion skinning canvas */
-        }
-
-        #pixelCanvas {
-            border: 2px solid #666;
-            cursor: crosshair;
-            background-color: #fff; /* Default background for transparent pixels */
-            image-rendering: pixelated; /* Crucial for crisp pixels */
-            touch-action: none;
-            position: relative;
-            z-index: 10;
-        }
-        #onionSkinCanvas {
-            position: absolute;
-            border: 2px solid transparent; /* Match main canvas border for alignment */
-            image-rendering: pixelated;
-            touch-action: none;
-            pointer-events: none; /* So it doesn't interfere with drawing */
-            z-index: 5;
-            opacity: 0.3;
-        }
-
-
-        .right-panel {
-            flex: 1;
-            min-width: 250px; /* Ensure frame list is usable */
-            display: flex;
-            flex-direction: column;
-        }
-
-        .tool-group {
-            margin-bottom: 15px;
-        }
-
-        .tool-group h3 {
+        h3 {
             margin-top: 0;
             font-size: 1.1em;
-            border-bottom: 1px solid #555;
+            border-bottom: 1px solid var(--border-color);
             padding-bottom: 5px;
         }
 
-        button, input[type="color"], input[type="number"], select {
-            background-color: #555;
-            color: #f0f0f0;
-            border: 1px solid #666;
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 2px;
+        .main-container {
+            display: flex;
+            flex-direction: row; /* Default for desktop */
+            gap: 15px;
+            width: 100%;
+            max-width: 1600px; /* Increased max-width */
+            flex-wrap: nowrap; /* Prevent wrapping by default, handle with media queries */
+        }
+
+        .left-sidebar, .right-sidebar {
+            background-color: var(--panel-bg);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .left-sidebar {
+            width: 280px; /* Fixed width for tool panel */
+            order: 1;
+        }
+
+        .canvas-main-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Align canvas to top */
+            padding: 10px;
+            background-color: var(--panel-bg);
+            border-radius: 8px;
+            order: 2;
+            min-width: 0; /* Important for flexbox shrinking */
+        }
+
+        .canvas-wrapper { /* For centering and scaling canvas */
+            position: relative;
+            max-width: 100%;
+            max-height: calc(100vh - 200px); /* Adjust based on header/footer */
+            overflow: auto; /* Allow scroll if canvas is too big */
+            border: 1px solid var(--border-color);
+        }
+        #pixelCanvas, #onionSkinCanvas, #selectionCanvas {
+            display: block; /* Remove extra space below canvas */
+            background-color: #ffffff; /* Default background for transparent pixels in editor */
+            image-rendering: pixelated;
+            cursor: crosshair;
+            touch-action: none;
+            position: absolute; /* Stack canvases */
+            top: 0;
+            left: 0;
+        }
+        #pixelCanvas { z-index: 10; }
+        #onionSkinCanvas { z-index: 5; pointer-events: none; opacity: 0.4; }
+        #selectionCanvas { z-index: 15; pointer-events: none; } /* For selection outline */
+
+
+        .right-sidebar {
+            width: 300px; /* Fixed width for frames/layers */
+            order: 3;
+        }
+
+        .tool-group {
+            background-color: #2c3e50; /* Slightly darker than panel */
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .tool-group label, .tool-group small {
+            display: block;
+            margin-bottom: 5px;
             font-size: 0.9em;
         }
-        button:hover, select:hover {
-            background-color: #666;
+
+        button, input, select {
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 8px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 3px;
+            font-size: 0.9em;
+            min-width: 30px; /* Ensure buttons are tappable */
         }
-        button.active {
-            background-color: #007bff;
+        button:hover, select:hover {
+            background-color: var(--accent-hover);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        button.active, .active-item {
+            background-color: var(--active-item-bg);
             color: white;
+            border-color: var(--accent-hover);
+        }
+        input[type="color"] {
+            padding: 2px;
+            width: 40px;
+            height: 30px;
+            vertical-align: middle;
         }
         input[type="number"] {
             width: 60px;
+            text-align: center;
         }
-        input[type="checkbox"] {
-            margin-right: 5px;
+        input[type="range"] {
+            width: 100px;
+            vertical-align: middle;
         }
 
         .color-palette {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(25px, 1fr));
-            gap: 5px;
+            grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));
+            gap: 4px;
         }
         .color-swatch {
-            width: 25px;
-            height: 25px;
-            border: 1px solid #666;
+            width: 28px;
+            height: 28px;
+            border: 1px solid var(--border-color);
             cursor: pointer;
             border-radius: 3px;
+            transition: transform 0.1s ease;
         }
         .color-swatch.selected {
-            border: 2px solid #007bff;
-            transform: scale(1.1);
+            border: 2px solid var(--accent-color);
+            transform: scale(1.15);
+            box-shadow: 0 0 5px var(--accent-color);
         }
 
-        #frames-list {
+        .list-ui { /* For frames and layers */
             list-style: none;
             padding: 0;
-            max-height: 300px;
+            max-height: 200px; /* Adjust as needed */
             overflow-y: auto;
-            background-color: #3a3a3a;
+            background-color: var(--input-bg);
             border-radius: 4px;
+            border: 1px solid var(--border-color);
         }
-        #frames-list li {
+        .list-ui li {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 8px;
-            border-bottom: 1px solid #555;
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--border-color);
             cursor: pointer;
+            font-size: 0.9em;
         }
-        #frames-list li:hover {
-            background-color: #4f4f4f;
-        }
-        #frames-list li.active-frame {
-            background-color: #007bff;
+        .list-ui li:last-child { border-bottom: none; }
+        .list-ui li:hover { background-color: #3e5770; }
+        .list-ui li.active-item {
+            background-color: var(--active-item-bg);
             color: white;
         }
-        .frame-preview {
-            width: 40px;
-            height: 40px;
+        .list-ui .item-preview {
+            width: 32px;
+            height: 32px;
             border: 1px solid #777;
-            margin-right: 10px;
+            margin-right: 8px;
             image-rendering: pixelated;
-            background-color: white; /* So transparent parts are visible */
+            background-color: white;
+            flex-shrink: 0;
         }
-        .frame-actions button {
-            padding: 3px 6px;
+        .list-ui .item-name { flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+        .list-ui .item-actions button {
+            padding: 2px 5px;
             font-size: 0.8em;
+            margin-left: 3px;
         }
+        .list-ui .item-actions .visibility-toggle.hidden {
+            opacity: 0.5;
+        }
+        .layer-opacity-slider {
+            width: 70px;
+            height: 10px;
+        }
+
 
         .modal {
             display: none;
@@ -170,558 +230,362 @@
             width: 100%;
             height: 100%;
             overflow: auto;
-            background-color: rgba(0,0,0,0.7);
+            background-color: rgba(0,0,0,0.8);
             justify-content: center;
             align-items: center;
         }
         .modal-content {
-            background-color: #444;
-            padding: 20px;
+            background-color: var(--panel-bg);
+            padding: 25px;
             border-radius: 8px;
-            width: 80%;
-            max-width: 500px;
+            width: 90%;
+            max-width: 600px;
             text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
         .modal-content img {
             max-width: 100%;
             height: auto;
-            border: 1px solid #666;
+            border: 1px solid var(--border-color);
             margin-top: 15px;
             image-rendering: pixelated;
         }
         .close-button {
             color: #aaa;
             float: right;
-            font-size: 28px;
+            font-size: 30px;
             font-weight: bold;
+            line-height: 0.5;
         }
         .close-button:hover,
         .close-button:focus {
-            color: #fff;
+            color: var(--text-color);
             text-decoration: none;
             cursor: pointer;
         }
+
+        /* Responsive adjustments */
+        @media (max-width: 900px) { /* Tablet and mobile */
+            .main-container {
+                flex-direction: column;
+            }
+            .left-sidebar, .right-sidebar, .canvas-main-area {
+                width: 100%;
+                order: 0; /* Reset order for stacking */
+                max-width: none;
+            }
+            .canvas-main-area { margin-top:15px; }
+            .left-sidebar { order: 1; } /* Tools first */
+            .canvas-main-area { order: 2; } /* Canvas second */
+            .right-sidebar { order: 3; } /* Frames/Layers last */
+
+            .canvas-wrapper {
+                max-height: 50vh; /* More space on smaller screens */
+            }
+            .list-ui { max-height: 150px; }
+        }
+        @media (max-width: 500px) { /* Small mobile */
+            body { padding: 5px; }
+            .main-container { gap: 10px; }
+            .left-sidebar, .right-sidebar, .canvas-main-area { padding: 8px; }
+            button, input, select { padding: 6px 8px; font-size: 0.85em; }
+            .color-swatch { width: 24px; height: 24px; }
+        }
+
+        .flex-row { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .flex-row label { margin-bottom: 0; }
+        .spacer { flex-grow: 1; }
     </style>
 </head>
 <body>
-    <h1>Pixel Art & Animation Studio</h1>
+    <h1>Pro Pixel Studio v2</h1>
 
-    <div class="container">
-        <div class="left-panel">
+    <div class="main-container">
+        <div class="left-sidebar">
             <div class="tool-group">
-                <h3>Canvas Setup</h3>
-                <label for="gridWidth">Width:</label>
-                <input type="number" id="gridWidth" value="32" min="8" max="128">
-                <label for="gridHeight">Height:</label>
-                <input type="number" id="gridHeight" value="32" min="8" max="128">
-                <br>
-                <label for="pixelSizeInput">Pixel Size:</label>
-                <input type="number" id="pixelSizeInput" value="15" min="5" max="40">
-                <button id="resizeCanvas">Apply Size</button>
-                <br>
-                <input type="checkbox" id="gridToggle" checked> <label for="gridToggle">Show Grid</label>
+                <h3>Canvas</h3>
+                <div class="flex-row">
+                    <label for="gridWidth">W:</label><input type="number" id="gridWidth" value="32" min="8" max="256">
+                    <label for="gridHeight">H:</label><input type="number" id="gridHeight" value="32" min="8" max="256">
+                </div>
+                <div class="flex-row">
+                    <label for="pixelSizeInput">Zoom:</label><input type="number" id="pixelSizeInput" value="15" min="2" max="50">
+                    <button id="resizeCanvasApply">Apply Size</button>
+                </div>
+                <div class="flex-row">
+                    <input type="checkbox" id="gridToggle" checked><label for="gridToggle">Grid</label>
+                    <input type="checkbox" id="centerCanvasToggle" checked><label for="centerCanvasToggle">Center Art</label>
+                </div>
             </div>
 
             <div class="tool-group">
                 <h3>Tools</h3>
-                <button id="pencilTool" class="tool active">Pencil</button>
-                <button id="eraserTool" class="tool">Eraser</button>
-                <button id="fillTool" class="tool">Fill</button>
-                <button id="eyedropperTool" class="tool">Eyedropper</button>
+                <div class="flex-row">
+                    <button id="pencilTool" class="tool">✏️</button>
+                    <button id="eraserTool" class="tool">🧼</button>
+                    <button id="fillTool" class="tool">🩸</button>
+                    <button id="eyedropperTool" class="tool">💧</button>
+                    <button id="selectionTool" class="tool"> selección </button> <!--  Auswahl -->
+                </div>
+                <div id="selectionActions" class="flex-row" style="display:none;">
+                    <button id="moveSelectionBtn">Move</button>
+                    <button id="deselectBtn">Deselect</button>
+                </div>
+                <div class="flex-row">
+                    <label>Symmetry:</label>
+                    <button id="symNone" class="sym-btn active">Off</button>
+                    <button id="symX" class="sym-btn">X</button>
+                    <button id="symY" class="sym-btn">Y</button>
+                    <button id="symXY" class="sym-btn">XY</button>
+                </div>
+            </div>
+
+            <div class="tool-group">
+                <h3>Edit</h3>
+                <div class="flex-row">
+                    <button id="undoBtn" disabled>Undo</button>
+                    <button id="redoBtn" disabled>Redo</button>
+                </div>
+                <button id="clearLayerBtn">Clear Current Layer</button>
+                <button id="fillLayerBtn">Fill Layer with Color</button>
             </div>
 
             <div class="tool-group">
                 <h3>Color</h3>
                 <input type="color" id="colorPicker" value="#000000">
-                <div id="colorPalette" class="color-palette">
-                    <!-- Swatches will be added by JS -->
-                </div>
+                <div id="colorPalette" class="color-palette"></div>
             </div>
 
             <div class="tool-group">
-                <h3>Templates (Guides)</h3>
+                <h3>Templates</h3>
                 <select id="templateSelector">
                     <option value="">None</option>
-                    <option value="human_stick">Human Stick Figure</option>
-                    <option value="quad_stick">Quadruped Stick Figure</option>
+                    <option value="human_stick">Human Stick</option>
+                    <option value="quad_stick">Quadruped Stick</option>
                     <option value="simple_face">Simple Face</option>
+                    <option value="walk_cycle_4frame">Walk Cycle (4 Fr)</option>
                 </select>
                 <button id="loadTemplate">Load Template</button>
-                <small>This will draw a guide on the current frame. It might overwrite existing pixels.</small>
+                <small>Guides load on current layer. Walk cycle adds new frames.</small>
             </div>
         </div>
 
-        <div class="canvas-container">
-            <canvas id="onionSkinCanvas"></canvas>
-            <canvas id="pixelCanvas"></canvas>
+        <div class="canvas-main-area">
+            <div id="canvasWrapper" class="canvas-wrapper">
+                <canvas id="onionSkinCanvas"></canvas>
+                <canvas id="pixelCanvas"></canvas>
+                <canvas id="selectionCanvas"></canvas> <!-- For selection rectangle and move preview -->
+            </div>
         </div>
 
-        <div class="right-panel">
+        <div class="right-sidebar">
             <div class="tool-group">
-                <h3>Animation Frames</h3>
-                <button id="addFrame">Add Frame</button>
-                <button id="duplicateFrame">Duplicate Frame</button>
-                <ul id="frames-list">
-                    <!-- Frame items will be added by JS -->
-                </ul>
+                <h3>Layers <span id="currentLayerInfo"></span></h3>
+                <div class="flex-row">
+                    <button id="addLayerBtn">Add</button>
+                    <button id="deleteLayerBtn" disabled>Del</button>
+                    <button id="moveLayerUpBtn" disabled>↑</button>
+                    <button id="moveLayerDownBtn" disabled>↓</button>
+                </div>
+                <ul id="layersList" class="list-ui"></ul>
+            </div>
+
+            <div class="tool-group">
+                <h3>Animation Frames <span id="currentFrameInfo"></span></h3>
+                <div class="flex-row">
+                    <button id="addFrameBtn">Add</button>
+                    <button id="duplicateFrameBtn" disabled>Dup</button>
+                    <button id="deleteFrameBtn" disabled>Del</button>
+                </div>
+                <ul id="framesList" class="list-ui"></ul>
             </div>
 
             <div class="tool-group">
                 <h3>Animation Controls</h3>
-                <button id="playAnimation">Play</button>
-                <label for="fps">FPS:</label>
-                <input type="number" id="fps" value="5" min="1" max="30">
-                <br>
-                <input type="checkbox" id="onionSkinToggle" checked> <label for="onionSkinToggle">Onion Skin</label>
-                 <select id="onionSkinMode">
-                    <option value="prev">Previous Frame</option>
-                    <option value="next">Next Frame</option>
-                    <option value="both">Both</option>
-                </select>
+                <div class="flex-row">
+                    <button id="playAnimationBtn">Play</button>
+                    <label for="fpsInput">FPS:</label><input type="number" id="fpsInput" value="8" min="1" max="60">
+                </div>
+                <input type="checkbox" id="onionSkinToggle" checked><label for="onionSkinToggle">Onion Skin</label>
+                <div class="flex-row">
+                    <label for="onionPrevFrames">Prev:</label><input type="number" id="onionPrevFrames" value="1" min="0" max="5">
+                    <label for="onionNextFrames">Next:</label><input type="number" id="onionNextFrames" value="1" min="0" max="5">
+                </div>
+                 <div class="flex-row">
+                    <label for="onionPrevColor">PrevClr:</label><input type="color" id="onionPrevColor" value="#0000FF">
+                    <label for="onionNextColor">NextClr:</label><input type="color" id="onionNextColor" value="#FF0000">
+                </div>
             </div>
 
-             <div class="tool-group">
+            <div class="tool-group">
                 <h3>Export</h3>
-                <button id="exportGif">Export as GIF</button>
+                <button id="exportGifBtn">Export GIF</button>
+                <button id="exportPngBtn">Export PNG (Current Frame)</button>
             </div>
         </div>
     </div>
 
     <div id="gifPreviewModal" class="modal">
         <div class="modal-content">
-            <span class="close-button" onclick="document.getElementById('gifPreviewModal').style.display='none'">×</span>
-            <h3>Generated GIF</h3>
-            <img id="gifPreviewImage" src="#" alt="Generated GIF">
-            <p><small>Right-click to save image.</small></p>
+            <span class="close-button" onclick="document.getElementById('gifPreviewModal').style.display='none'">&times;</span>
+            <h3>Generated Output</h3>
+            <img id="outputPreviewImage" src="#" alt="Generated Output">
+            <p><small>Right-click (or long-press on mobile) to save image.</small></p>
         </div>
     </div>
 
-    <!-- GIFEncoder.js - A bit large, but necessary for client-side GIF encoding -->
-    <!-- This is a simplified version for single-file. For production, use a proper build process. -->
+    <!-- GIFEncoder.js - Same as before, truncated for brevity here, include full from previous answer -->
     <script>
-        // Minimal GIFEncoder.js parts needed (LZW Encoder + GIF specific parts)
-        // Full library is ~20KB minified. This is a highly condensed version.
-        // For a real project, you'd include the full library or use a module.
-        // This placeholder ensures the script has a `GIFEncoder` available.
-        // A proper implementation of GIFEncoder would be too long to paste here directly
-        // and still keep the HTML file readable.
-        // I will use a common, readily available GIFEncoder (like jsgif's)
-        // and assume it's been included or pasted here.
-
-        /*
-        * GIFEncoder.js
-        * Authors: Kevin Weiner (original Java version), Thibault Imbert (AS3 version),
-        *          Kevin Kwok (JavaScript version), Johannes Rudolph (LZW optimization)
-        *
-        * Licensed under the MIT License
-        *
-        * Packed and slightly modified by Glen Chiacchieri for jsgif
-        * More info: https://github.com/sole/jsgif
-        */
-
+        // Minimal GIFEncoder.js (same as in previous response)
+        // ... (Paste the full GIFEncoder code here) ...
         var GIFEncoder = (function() {
-            function n(t) {
-                for (var r = t.length, e = new Uint8Array(r), i = 0; i < r; i++) e[i] = t.charCodeAt(i);
-                return e
-            }
-
-            function o(n) {
-                this.data = n, this.pos = 0
-            }
-
-            function LZWEncoder(width, height, LZWBlockSize, colorDepth) {
-                var MAX_STACK_SIZE = 4096;
-                var BITS = 12;
-                var HSIZE = 5003; // 80% occupancy
-                var EOF = -1;
-                var g_init_bits;
-                var ClearCode;
-                var EOFCode;
-                var htab = new Int32Array(HSIZE);
-                var codetab = new Int32Array(HSIZE);
-                var cur_accum = 0;
-                var cur_bits = 0;
-                var n_bits;
-                var maxcode;
-                var free_ent = 0; // first unused entry
-                var clear_flg = false;
-                var a_count;
-                var remaining;
-                var curPixel;
-                var pixels;
-                var accum = new Uint8Array(256);
-                var chars = new Uint8Array(256); // Character output buffer
-
-                // Algorithm: compress arguments are:
-                // init_bits - initial number of bits
-                // LZW minimum code size
-                // Algorithm: compress arguments are:
-                // init_bits - initial number of bits
-                // LZW minimum code size
-                // out is the modular compression routine that handles deferred output
-                function char_out(c, outs) {
-                    accum[a_count++] = c;
-                    if (a_count >= LZWBlockSize)
-                        flush_char(outs);
-                }
-                // Add a character to the end of the current packet, and if it is 254
-                // characters, flush the packet to disk.
-                function cl_block(outs) // clear block
-                {
-                    cl_hash(HSIZE);
-                    free_ent = ClearCode + 2;
-                    clear_flg = true;
-                    output(ClearCode, outs);
-                }
-                // Reset code table.
-                function cl_hash(hsize) {
-                    for (var i = 0; i < hsize; ++i)
-                        htab[i] = -1;
-                }
-
-                function compress(init_bits, outs) {
-                    var fcode;
-                    var i /* = 0 */
-                    ;
-                    var c;
-                    var ent;
-                    var disp;
-                    var hsize_reg;
-                    var hshift;
-                    // Set up the globals: g_init_bits - initial number of bits
-                    g_init_bits = init_bits;
-                    // Set up the necessary values
-                    clear_flg = false;
-                    n_bits = g_init_bits;
-                    maxcode = MAXCODE(n_bits);
-                    ClearCode = 1 << (init_bits - 1);
-                    EOFCode = ClearCode + 1;
-                    free_ent = ClearCode + 2;
-                    a_count = 0; // clear packet
-                    ent = nextPixel();
-                    hshift = 0;
-                    for (fcode = HSIZE; fcode < 65536; fcode *= 2)
-                        ++hshift;
-                    hshift = 8 - hshift; // set hash code range bound
-                    hsize_reg = HSIZE;
-                    cl_hash(hsize_reg); // clear hash table
-                    output(ClearCode, outs);
-                    outer_loop: while ((c = nextPixel()) != EOF) {
-                        fcode = (c << BITS) + ent;
-                        i = (c << hshift) ^ ent; // xor hashing
-                        if (htab[i] === fcode) {
-                            ent = codetab[i];
-                            continue;
-                        } else if (htab[i] >= 0) // non-empty slot
-                        {
-                            disp = hsize_reg - i; // secondary hash (after G. Knott)
-                            if (i === 0)
-                                disp = 1;
-                            do {
-                                if ((i -= disp) < 0)
-                                    i += hsize_reg;
-                                if (htab[i] === fcode) {
-                                    ent = codetab[i];
-                                    continue outer_loop;
-                                }
-                            } while (htab[i] >= 0);
-                        }
-                        output(ent, outs);
-                        ent = c;
-                        if (free_ent < 1 << BITS) {
-                            codetab[i] = free_ent++; // code -> ent
-                            htab[i] = fcode;
-                        } else
-                            cl_block(outs);
-                    }
-                    // Put out the final code.
-                    output(ent, outs);
-                    output(EOFCode, outs);
-                }
-                // Output the given code.
-                // Inputs:
-                // code: A n_bits-bit integer. If == -1, then EOF. This assumes
-                // that n_bits =< wordsize - 1.
-                // Outputs:
-                // Outputs code to the file.
-                // Assumptions:
-                // Chars are 8 bits long.
-                // Algorithm:
-                // Maintain a BITS character long buffer (so that 8 codes will
-                // fit in it exactly). Use the VAX insv instruction to insert each
-                // code in turn. When the buffer fills up empty it and start over.
-                function encode(os) {
-                    os.writeByte(LZWBlockSize); // write "initial code size" byte
-                    remaining = width * height; // reset navigation variables
-                    curPixel = 0;
-                    compress(LZWBlockSize + 1, os); // compress and write the data
-                    os.writeByte(0); // write block terminator
-                }
-                // Flush the packet to disk, and reset the accumulator
-                function flush_char(outs) {
-                    if (a_count > 0) {
-                        outs.writeByte(a_count);
-                        outs.writeBytes(accum, 0, a_count);
-                        a_count = 0;
-                    }
-                }
-
-                function MAXCODE(n_bits) {
-                    return (1 << n_bits) - 1;
-                }
-                //----------------------------------------------------------------------------
-                // Return the next pixel from the image
-                //----------------------------------------------------------------------------
-                function nextPixel() {
-                    if (remaining === 0)
-                        return EOF;
-                    --remaining;
-                    var pix = pixels[curPixel++];
-                    return pix & 0xff;
-                }
-
-                function output(code, outs) {
-                    cur_accum &= (1 << cur_bits) -1;
-                    if (cur_bits > 0)
-                        cur_accum |= (code << cur_bits);
-                    else
-                        cur_accum = code;
-                    cur_bits += n_bits;
-                    while (cur_bits >= 8) {
-                        char_out(cur_accum & 0xff, outs);
-                        cur_accum >>= 8;
-                        cur_bits -= 8;
-                    }
-                    // If the next entry is going to be too big for the code size,
-                    // then increase it, if possible.
-                    if (free_ent > maxcode || clear_flg) {
-                        if (clear_flg) {
-                            maxcode = MAXCODE(n_bits = g_init_bits);
-                            clear_flg = false;
-                        } else {
-                            ++n_bits;
-                            if (n_bits == BITS)
-                                maxcode = 1 << BITS;
-                            else
-                                maxcode = MAXCODE(n_bits);
-                        }
-                    }
-                    if (code == EOFCode) {
-                        // At EOF, write the rest of the buffer.
-                        while (cur_bits > 0) {
-                            char_out(cur_accum & 0xff, outs);
-                            cur_accum >>= 8;
-                            cur_bits -= 8;
-                        }
-                        flush_char(outs);
-                    }
-                };
-                this.encode = function(_pixels, os) {
-                    pixels = _pixels;
-                    encode(os);
-                };
-            };
-
-            function GIFEncoder() {
-                this.width = 0, this.height = 0, this.transparent = null, this.transIndex = 0, this.repeat = -1, this.delay = 0, this.image = null, this.pixels = null, this.indexedPixels = null, this.colorDepth = null, this.colorTab = null, this.usedEntry = new Array, this.palSize = 7, this.dispose = -1, this.firstFrame = !0, this.sample = 10, this.started = !1, this.out = new o(new Uint8Array(2048)) // Initial buffer size
-            }
-            return GIFEncoder.prototype.setDelay = function(t) {
-                this.delay = Math.round(t / 10)
-            }, GIFEncoder.prototype.setDispose = function(t) {
-                t >= 0 && (this.dispose = t)
-            }, GIFEncoder.prototype.setFrameRate = function(t) {
-                this.delay = Math.round(100 / t)
-            }, GIFEncoder.prototype.setRepeat = function(t) {
-                this.repeat = t
-            }, GIFEncoder.prototype.setTransparent = function(t) {
-                this.transparent = t
-            }, GIFEncoder.prototype.addFrame = function(t) {
-                if (null === t || !this.started) throw new Error("Please call start() before adding frames");
-                this.image = t, this.width = t.width, this.height = t.height, "imageData" === t.constructor.name.toLowerCase() && (this.pixels = t.data), this.getImagePixels(), this.analyzePixels(), this.firstFrame && (this.writeLSD(), this.writePalette(), this.repeat >= 0 && this.writeNetscapeExt()), this.writeGraphicCtrlExt(), this.writeImageDesc(), this.firstFrame || this.writePalette(), this.writePixels(), this.firstFrame = !1
-            }, GIFEncoder.prototype.finish = function() {
-                if (!this.started) return;
-                this.started = !1, this.out.writeByte(59)
-            }, GIFEncoder.prototype.getResults = function() {
-                return this.out.getData()
-            }, GIFEncoder.prototype.setQuality = function(t) {
-                t < 1 && (t = 1), this.sample = t
-            }, GIFEncoder.prototype.setSize = function(t, r) {
-                this.width = t, this.height = r
-            }, GIFEncoder.prototype.start = function() {
-                this.out.writeUTFBytes("GIF89a"), this.started = !0
-            }, GIFEncoder.prototype.analyzePixels = function() {
-                var t = this.pixels.length,
-                    r = t / 3;
-                this.indexedPixels = new Uint8Array(r), this.colorTab = new Uint8Array(768), this.usedEntry = new Array;
-                for (var e = 0, i = 0; i < r; i++) {
-                    var s = this.sample,
-                        a = i * s * 3,
-                        n = this.findClosest(this.pixels[a], this.pixels[a + 1], this.pixels[a + 2]);
-                    this.usedEntry[n] = !0, this.indexedPixels[e++] = n
-                }
-                this.colorDepth = 8, this.palSize = 7, this.transIndex = this.findClosestTransparent(), this.pixels = null; // free memory
-            }, GIFEncoder.prototype.findClosest = function(t, r, e) {
-                if (null === this.colorTab) return -1;
-                if (this.transparent && t === (this.transparent & 255) && r === (this.transparent >> 8 & 255) && e === (this.transparent >> 16 & 255))
-                    return this.transIndex !== -1 ? this.transIndex : 0; // Use first color if transparent not set yet
-                for (var i = 0, s = 16777216, a = 0; a < this.colorTab.length; a += 3) {
-                    var n = t - this.colorTab[a],
-                        o = r - this.colorTab[a + 1],
-                        h = e - this.colorTab[a + 2],
-                        l = n * n + o * o + h * h;
-                    if (l < s) {
-                        if (0 === l) return a / 3; // exact match
-                        s = l, i = a / 3
-                    }
-                }
-                return i
-            }, GIFEncoder.prototype.findClosestTransparent = function() {
-                if (null === this.transparent) return -1;
-                var t = this.transparent >> 16 & 255,
-                    r = this.transparent >> 8 & 255,
-                    e = 255 & this.transparent;
-                // Look for exact match first
-                for (var i = 0, s = 0; s < this.colorTab.length; s += 3, i++) {
-                    if (this.colorTab[s] === t && this.colorTab[s + 1] === r && this.colorTab[s + 2] === e) {
-                        return i;
-                    }
-                }
-                // If no exact match, and we have space in palette, add it
-                // For simplicity, we assume a fixed palette and don't add new colors dynamically for transparency
-                // This means transparent color must be one of the predefined palette colors.
-                // If your GIF needs a transparent color not in the palette, you'd need a quantizer.
-                // For this example, we'll pick the closest existing color or the first one.
-                var closestIdx = 0;
-                var minDist = Number.MAX_VALUE;
-                for (i = 0, s = 0; s < (1 << this.palSize + 1) * 3 && s < this.colorTab.length; s += 3, i++) {
-                    var dr = t - this.colorTab[s];
-                    var dg = r - this.colorTab[s + 1];
-                    var db = e - this.colorTab[s + 2];
-                    var d = dr * dr + dg * dg + db * db;
-                    if (this.usedEntry[i] && d < minDist) {
-                        minDist = d;
-                        closestIdx = i;
-                    }
-                }
-                return closestIdx; // Return an existing color index
-            }, GIFEncoder.prototype.getImagePixels = function() {
-                if (!this.pixels) { // If pixels not set from imageData
-                    var t = this.width,
-                        r = this.height;
-                    this.pixels = new Uint8Array(t * r * 3);
-                    var e = this.image,
-                        i = 0;
-                    // This part assumes image is a canvas context or similar with getImageData
-                    var s = e.getImageData(0, 0, t, r).data;
-                    for (var a = s.length, n = 0, o = 0; o < a; o += 4)
-                        this.pixels[i++] = s[n++], this.pixels[i++] = s[n++], this.pixels[i++] = s[n++], n++;
-                }
-            }, GIFEncoder.prototype.writeGraphicCtrlExt = function() {
-                this.out.writeByte(33), this.out.writeByte(249), this.out.writeByte(4);
-                var t, r;
-                this.transparent === null ? (t = 0, r = 0) : (t = 1, r = 2), this.dispose >= 0 && (r = 7 & this.dispose), r <<= 2, this.out.writeByte(0 | r | 0 | t), this.out.writeShort(this.delay), this.out.writeByte(this.transIndex), this.out.writeByte(0)
-            }, GIFEncoder.prototype.writeImageDesc = function() {
-                this.out.writeByte(44), this.out.writeShort(0), this.out.writeShort(0), this.out.writeShort(this.width), this.out.writeShort(this.height), this.firstFrame ? this.out.writeByte(0) : this.out.writeByte(128 | this.palSize)
-            }, GIFEncoder.prototype.writeLSD = function() {
-                this.out.writeShort(this.width), this.out.writeShort(this.height), this.out.writeByte(240 | this.palSize), this.out.writeByte(0), this.out.writeByte(0)
-            }, GIFEncoder.prototype.writeNetscapeExt = function() {
-                this.out.writeByte(33), this.out.writeByte(255), this.out.writeByte(11), this.out.writeUTFBytes("NETSCAPE2.0"), this.out.writeByte(3), this.out.writeByte(1), this.out.writeShort(this.repeat), this.out.writeByte(0)
-            }, GIFEncoder.prototype.writePalette = function() {
-                this.out.writeBytes(this.colorTab, 0, (1 << this.palSize + 1) * 3);
-                for (var t = (1 << this.palSize + 1) * 3, r = 768; t < r; t++) this.out.writeByte(0)
-            }, GIFEncoder.prototype.writePixels = function() {
-                new LZWEncoder(this.width, this.height, this.indexedPixels, this.colorDepth).encode(this.out)
-            }, o.prototype.writeByte = function(t) {
-                this.ensureCapacity(1), this.data[this.pos++] = t
-            }, o.prototype.writeBytes = function(t, r, e) {
-                this.ensureCapacity(e);
-                for (var i = 0; i < e; i++) this.data[this.pos++] = t[r + i]
-            }, o.prototype.writeShort = function(t) {
-                this.ensureCapacity(2), this.data[this.pos++] = 255 & t, this.data[this.pos++] = t >> 8 & 255
-            }, o.prototype.writeUTFBytes = function(t) {
-                for (var r = n(t), e = 0; e < r.length; e++) this.writeByte(r[e])
-            }, o.prototype.getData = function() {
-                return this.data.slice(0, this.pos)
-            }, o.prototype.ensureCapacity = function(t) {
-                if (this.pos + t > this.data.length) {
-                    var r = new Uint8Array(Math.max(this.data.length * 2, this.data.length + t));
-                    r.set(this.data), this.data = r
-                }
-            }, GIFEncoder
+            function n(t) { for (var r = t.length, e = new Uint8Array(r), i = 0; i < r; i++) e[i] = t.charCodeAt(i); return e } function o(n) { this.data = n, this.pos = 0 }
+            function LZWEncoder(width, height, LZWBlockSize, colorDepth) { var MAX_STACK_SIZE = 4096; var BITS = 12; var HSIZE = 5003; var EOF = -1; var g_init_bits; var ClearCode; var EOFCode; var htab = new Int32Array(HSIZE); var codetab = new Int32Array(HSIZE); var cur_accum = 0; var cur_bits = 0; var n_bits; var maxcode; var free_ent = 0; var clear_flg = false; var a_count; var remaining; var curPixel; var pixels; var accum = new Uint8Array(256); var chars = new Uint8Array(256); function char_out(c, outs) { accum[a_count++] = c; if (a_count >= LZWBlockSize) flush_char(outs) } function cl_block(outs) { cl_hash(HSIZE); free_ent = ClearCode + 2; clear_flg = true; output(ClearCode, outs) } function cl_hash(hsize) { for (var i = 0; i < hsize; ++i) htab[i] = -1 } function compress(init_bits, outs) { var fcode; var i; var c; var ent; var disp; var hsize_reg; var hshift; g_init_bits = init_bits; clear_flg = false; n_bits = g_init_bits; maxcode = MAXCODE(n_bits); ClearCode = 1 << (init_bits - 1); EOFCode = ClearCode + 1; free_ent = ClearCode + 2; a_count = 0; ent = nextPixel(); hshift = 0; for (fcode = HSIZE; fcode < 65536; fcode *= 2)++hshift; hshift = 8 - hshift; hsize_reg = HSIZE; cl_hash(hsize_reg); output(ClearCode, outs); outer_loop: while ((c = nextPixel()) != EOF) { fcode = (c << BITS) + ent; i = (c << hshift) ^ ent; if (htab[i] === fcode) { ent = codetab[i]; continue } else if (htab[i] >= 0) { disp = hsize_reg - i; if (i === 0) disp = 1; do { if ((i -= disp) < 0) i += hsize_reg; if (htab[i] === fcode) { ent = codetab[i]; continue outer_loop } } while (htab[i] >= 0) } output(ent, outs); ent = c; if (free_ent < 1 << BITS) { codetab[i] = free_ent++; htab[i] = fcode } else cl_block(outs) } output(ent, outs); output(EOFCode, outs) } function encode(os) { os.writeByte(LZWBlockSize); remaining = width * height; curPixel = 0; compress(LZWBlockSize + 1, os); os.writeByte(0) } function flush_char(outs) { if (a_count > 0) { outs.writeByte(a_count); outs.writeBytes(accum, 0, a_count); a_count = 0 } } function MAXCODE(n_bits) { return (1 << n_bits) - 1 } function nextPixel() { if (remaining === 0) return EOF; --remaining; var pix = pixels[curPixel++]; return pix & 0xff } function output(code, outs) { cur_accum &= (1 << cur_bits) -1; if (cur_bits > 0) cur_accum |= (code << cur_bits); else cur_accum = code; cur_bits += n_bits; while (cur_bits >= 8) { char_out(cur_accum & 0xff, outs); cur_accum >>= 8; cur_bits -= 8 } if (free_ent > maxcode || clear_flg) { if (clear_flg) { maxcode = MAXCODE(n_bits = g_init_bits); clear_flg = false } else { ++n_bits; if (n_bits == BITS) maxcode = 1 << BITS; else maxcode = MAXCODE(n_bits) } } if (code == EOFCode) { while (cur_bits > 0) { char_out(cur_accum & 0xff, outs); cur_accum >>= 8; cur_bits -= 8 } flush_char(outs) } }; this.encode = function(_pixels, os) { pixels = _pixels; encode(os) } };
+            function GIFEncoder() { this.width = 0, this.height = 0, this.transparent = null, this.transIndex = 0, this.repeat = -1, this.delay = 0, this.image = null, this.pixels = null, this.indexedPixels = null, this.colorDepth = null, this.colorTab = null, this.usedEntry = new Array, this.palSize = 7, this.dispose = -1, this.firstFrame = !0, this.sample = 10, this.started = !1, this.out = new o(new Uint8Array(2048)) }
+            return GIFEncoder.prototype.setDelay = function(t) { this.delay = Math.round(t / 10) }, GIFEncoder.prototype.setDispose = function(t) { t >= 0 && (this.dispose = t) }, GIFEncoder.prototype.setFrameRate = function(t) { this.delay = Math.round(100 / t) }, GIFEncoder.prototype.setRepeat = function(t) { this.repeat = t }, GIFEncoder.prototype.setTransparent = function(t) { this.transparent = t }, GIFEncoder.prototype.addFrame = function(t) { if (null === t || !this.started) throw new Error("Please call start() before adding frames"); this.image = t, this.width = t.width, this.height = t.height, "imageData" === t.constructor.name.toLowerCase() && (this.pixels = t.data), this.getImagePixels(), this.analyzePixels(), this.firstFrame && (this.writeLSD(), this.writePalette(), this.repeat >= 0 && this.writeNetscapeExt()), this.writeGraphicCtrlExt(), this.writeImageDesc(), this.firstFrame || this.writePalette(), this.writePixels(), this.firstFrame = !1 }, GIFEncoder.prototype.finish = function() { if (!this.started) return; this.started = !1, this.out.writeByte(59) }, GIFEncoder.prototype.getResults = function() { return this.out.getData() }, GIFEncoder.prototype.setQuality = function(t) { t < 1 && (t = 1), this.sample = t }, GIFEncoder.prototype.setSize = function(t, r) { this.width = t, this.height = r }, GIFEncoder.prototype.start = function() { this.out.writeUTFBytes("GIF89a"), this.started = !0 }, GIFEncoder.prototype.analyzePixels = function() { var t = this.pixels.length, r = t / 3; this.indexedPixels = new Uint8Array(r), this.colorTab = new Uint8Array(768), this.usedEntry = new Array; for (var e = 0, i = 0; i < r; i++) { var s = this.sample, a = i * s * 3, n = this.findClosest(this.pixels[a], this.pixels[a + 1], this.pixels[a + 2]); this.usedEntry[n] = !0, this.indexedPixels[e++] = n } this.colorDepth = 8, this.palSize = 7, this.transIndex = this.findClosestTransparent(), this.pixels = null; }, GIFEncoder.prototype.findClosest = function(t, r, e) { if (null === this.colorTab) return -1; if (this.transparent && t === (this.transparent & 255) && r === (this.transparent >> 8 & 255) && e === (this.transparent >> 16 & 255)) return this.transIndex !== -1 ? this.transIndex : 0; for (var i = 0, s = 16777216, a = 0; a < this.colorTab.length; a += 3) { var n = t - this.colorTab[a], o = r - this.colorTab[a + 1], h = e - this.colorTab[a + 2], l = n * n + o * o + h * h; if (l < s) { if (0 === l) return a / 3; s = l, i = a / 3 } } return i }, GIFEncoder.prototype.findClosestTransparent = function() { if (null === this.transparent) return -1; var t = this.transparent >> 16 & 255, r = this.transparent >> 8 & 255, e = 255 & this.transparent; for (var i = 0, s = 0; s < this.colorTab.length; s += 3, i++) { if (this.colorTab[s] === t && this.colorTab[s + 1] === r && this.colorTab[s + 2] === e) { return i; } } var closestIdx = 0; var minDist = Number.MAX_VALUE; for (i = 0, s = 0; s < (1 << this.palSize + 1) * 3 && s < this.colorTab.length; s += 3, i++) { var dr = t - this.colorTab[s]; var dg = r - this.colorTab[s + 1]; var db = e - this.colorTab[s + 2]; var d = dr * dr + dg * dg + db * db; if (this.usedEntry[i] && d < minDist) { minDist = d; closestIdx = i; } } return closestIdx; }, GIFEncoder.prototype.getImagePixels = function() { if (!this.pixels) { var t = this.width, r = this.height; this.pixels = new Uint8Array(t * r * 3); var e = this.image, i = 0; var s = e.getImageData(0, 0, t, r).data; for (var a = s.length, n = 0, o = 0; o < a; o += 4) this.pixels[i++] = s[n++], this.pixels[i++] = s[n++], this.pixels[i++] = s[n++], n++; } }, GIFEncoder.prototype.writeGraphicCtrlExt = function() { this.out.writeByte(33), this.out.writeByte(249), this.out.writeByte(4); var t, r; this.transparent === null ? (t = 0, r = 0) : (t = 1, r = 2), this.dispose >= 0 && (r = 7 & this.dispose), r <<= 2, this.out.writeByte(0 | r | 0 | t), this.out.writeShort(this.delay), this.out.writeByte(this.transIndex), this.out.writeByte(0) }, GIFEncoder.prototype.writeImageDesc = function() { this.out.writeByte(44), this.out.writeShort(0), this.out.writeShort(0), this.out.writeShort(this.width), this.out.writeShort(this.height), this.firstFrame ? this.out.writeByte(0) : this.out.writeByte(128 | this.palSize) }, GIFEncoder.prototype.writeLSD = function() { this.out.writeShort(this.width), this.out.writeShort(this.height), this.out.writeByte(240 | this.palSize), this.out.writeByte(0), this.out.writeByte(0) }, GIFEncoder.prototype.writeNetscapeExt = function() { this.out.writeByte(33), this.out.writeByte(255), this.out.writeByte(11), this.out.writeUTFBytes("NETSCAPE2.0"), this.out.writeByte(3), this.out.writeByte(1), this.out.writeShort(this.repeat), this.out.writeByte(0) }, GIFEncoder.prototype.writePalette = function() { this.out.writeBytes(this.colorTab, 0, (1 << this.palSize + 1) * 3); for (var t = (1 << this.palSize + 1) * 3, r = 768; t < r; t++) this.out.writeByte(0) }, GIFEncoder.prototype.writePixels = function() { new LZWEncoder(this.width, this.height, this.indexedPixels, this.colorDepth).encode(this.out) }, o.prototype.writeByte = function(t) { this.ensureCapacity(1), this.data[this.pos++] = t }, o.prototype.writeBytes = function(t, r, e) { this.ensureCapacity(e); for (var i = 0; i < e; i++) this.data[this.pos++] = t[r + i] }, o.prototype.writeShort = function(t) { this.ensureCapacity(2), this.data[this.pos++] = 255 & t, this.data[this.pos++] = t >> 8 & 255 }, o.prototype.writeUTFBytes = function(t) { for (var r = n(t), e = 0; e < r.length; e++) this.writeByte(r[e]) }, o.prototype.getData = function() { return this.data.slice(0, this.pos) }, o.prototype.ensureCapacity = function(t) { if (this.pos + t > this.data.length) { var r = new Uint8Array(Math.max(this.data.length * 2, this.data.length + t)); r.set(this.data), this.data = r } }, GIFEncoder
         })();
-
     </script>
+
     <script>
-        // Main application logic
-        const canvas = document.getElementById('pixelCanvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true }); // willReadFrequently for eyedropper/getImageData
+        // Main application logic v2
+        const pixelCanvas = document.getElementById('pixelCanvas');
+        const ctx = pixelCanvas.getContext('2d', { willReadFrequently: true });
         const onionSkinCanvas = document.getElementById('onionSkinCanvas');
         const onionCtx = onionSkinCanvas.getContext('2d', { willReadFrequently: true });
+        const selectionCanvas = document.getElementById('selectionCanvas');
+        const selectionCtx = selectionCanvas.getContext('2d', { willReadFrequently: true });
+        const canvasWrapper = document.getElementById('canvasWrapper');
 
+        // UI Elements
         const colorPicker = document.getElementById('colorPicker');
         const colorPaletteContainer = document.getElementById('colorPalette');
         const gridWidthInput = document.getElementById('gridWidth');
         const gridHeightInput = document.getElementById('gridHeight');
         const pixelSizeInput = document.getElementById('pixelSizeInput');
-        const resizeCanvasBtn = document.getElementById('resizeCanvas');
+        const resizeCanvasBtn = document.getElementById('resizeCanvasApply');
         const gridToggle = document.getElementById('gridToggle');
-        const onionSkinToggle = document.getElementById('onionSkinToggle');
-        const onionSkinModeSelect = document.getElementById('onionSkinMode');
+        const centerCanvasToggle = document.getElementById('centerCanvasToggle');
 
         const pencilToolBtn = document.getElementById('pencilTool');
         const eraserToolBtn = document.getElementById('eraserTool');
         const fillToolBtn = document.getElementById('fillTool');
         const eyedropperToolBtn = document.getElementById('eyedropperTool');
-        const toolBtns = [pencilToolBtn, eraserToolBtn, fillToolBtn, eyedropperToolBtn];
+        const selectionToolBtn = document.getElementById('selectionTool');
+        const toolBtns = [pencilToolBtn, eraserToolBtn, fillToolBtn, eyedropperToolBtn, selectionToolBtn];
+        const selectionActionsUI = document.getElementById('selectionActions');
+        const moveSelectionBtn = document.getElementById('moveSelectionBtn');
+        const deselectBtn = document.getElementById('deselectBtn');
 
-        const addFrameBtn = document.getElementById('addFrame');
-        const duplicateFrameBtn = document.getElementById('duplicateFrame');
-        const framesListUI = document.getElementById('frames-list');
-        const playAnimationBtn = document.getElementById('playAnimation');
-        const fpsInput = document.getElementById('fps');
-        const exportGifBtn = document.getElementById('exportGif');
+        const symNoneBtn = document.getElementById('symNone');
+        const symXBtn = document.getElementById('symX');
+        const symYBtn = document.getElementById('symY');
+        const symXYBtn = document.getElementById('symXY');
+        const symBtns = [symNoneBtn, symXBtn, symYBtn, symXYBtn];
+        let currentSymmetry = 'none';
 
+        const undoBtn = document.getElementById('undoBtn');
+        const redoBtn = document.getElementById('redoBtn');
+        const clearLayerBtn = document.getElementById('clearLayerBtn');
+        const fillLayerBtn = document.getElementById('fillLayerBtn');
+
+        // Layers UI
+        const layersListUI = document.getElementById('layersList');
+        const addLayerBtn = document.getElementById('addLayerBtn');
+        const deleteLayerBtn = document.getElementById('deleteLayerBtn');
+        const moveLayerUpBtn = document.getElementById('moveLayerUpBtn');
+        const moveLayerDownBtn = document.getElementById('moveLayerDownBtn');
+        const currentLayerInfoUI = document.getElementById('currentLayerInfo');
+
+        // Frames UI
+        const framesListUI = document.getElementById('framesList');
+        const addFrameBtn = document.getElementById('addFrameBtn');
+        const duplicateFrameBtn = document.getElementById('duplicateFrameBtn');
+        const deleteFrameBtn = document.getElementById('deleteFrameBtn');
+        const currentFrameInfoUI = document.getElementById('currentFrameInfo');
+
+        // Animation UI
+        const playAnimationBtn = document.getElementById('playAnimationBtn');
+        const fpsInput = document.getElementById('fpsInput');
+        const onionSkinToggle = document.getElementById('onionSkinToggle');
+        const onionPrevFramesInput = document.getElementById('onionPrevFrames');
+        const onionNextFramesInput = document.getElementById('onionNextFrames');
+        const onionPrevColorInput = document.getElementById('onionPrevColor');
+        const onionNextColorInput = document.getElementById('onionNextColor');
+
+        // Export UI
+        const exportGifBtn = document.getElementById('exportGifBtn');
+        const exportPngBtn = document.getElementById('exportPngBtn');
+        const outputPreviewImage = document.getElementById('outputPreviewImage');
+        const gifPreviewModal = document.getElementById('gifPreviewModal');
+
+        // Template UI
         const templateSelector = document.getElementById('templateSelector');
         const loadTemplateBtn = document.getElementById('loadTemplate');
 
-        let gridWidth = parseInt(gridWidthInput.value);
-        let gridHeight = parseInt(gridHeightInput.value);
-        let pixelSize = parseInt(pixelSizeInput.value);
-        let currentColor = colorPicker.value;
-        let currentTool = 'pencil'; // pencil, eraser, fill, eyedropper
+        // State Variables
+        let gridWidth = 32, gridHeight = 32, pixelSize = 15;
+        let currentColor = '#000000';
+        let currentTool = 'pencil';
         let isDrawing = false;
+        let lastDrawPoint = null; // For drawing lines
 
         let frames = [];
-        let currentFrameIndex = -1; // No frame selected initially
+        let currentFrameIndex = -1;
+        let currentLayerIndex = -1;
+
         let animationInterval = null;
         let isPlaying = false;
 
+        const MAX_UNDO_STEPS = 50;
+        const transparentColor = 'rgba(0,0,0,0)';
+
+        let selectionRect = null; // { x, y, w, h } in grid coordinates
+        let isMovingSelection = false;
+        let selectionPixelData = null; // Temp storage for moving pixels
+        let selectionMoveOffset = { dx: 0, dy: 0 };
+
+
         const defaultPalette = [
             '#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
-            '#808080', '#C0C0C0', '#800000', '#008000', '#000080', '#808000', '#800080', '#008080',
-            '#FFA500', '#A52A2A', '#FFC0CB', '#E6E6FA', '#D2B48C', '#F5F5DC', '#00FF7F', '#4682B4'
+            '#808080', '#C0C0C0', '#A04000', '#27AE60', '#2980B9', '#F1C40F', '#8E44AD', '#16A085',
+            '#E74C3C', '#3498DB', '#F39C12', '#2ECC71', '#9B59B6', '#1ABC9C', '#D35400', '#7F8C8D'
         ];
-        let transparentColor = 'rgba(0,0,0,0)'; // For eraser
 
         // --- Initialization ---
         function init() {
-            setupCanvas();
+            console.log("Pixel Studio v2 Initializing...");
+            parseInputs();
+            setupCanvases();
             createPalette();
-            addFrame(); // Start with one empty frame
+            addNewFrame(); // Start with one frame and one layer
             setupEventListeners();
-            updateToolButtons();
+            updateAllUI();
+            setCurrentTool('pencil'); // Ensure pencil is active
+            console.log("Initialization complete.");
         }
 
-        function setupCanvas() {
-            canvas.width = gridWidth * pixelSize;
-            canvas.height = gridHeight * pixelSize;
-            onionSkinCanvas.width = canvas.width;
-            onionSkinCanvas.height = canvas.height;
-            ctx.imageSmoothingEnabled = false; // Keep pixels sharp
-            onionCtx.imageSmoothingEnabled = false;
+        function parseInputs() {
+            gridWidth = parseInt(gridWidthInput.value);
+            gridHeight = parseInt(gridHeightInput.value);
+            pixelSize = parseInt(pixelSizeInput.value);
+        }
 
-            // Set canvas background for proper alpha blending if needed
-            // For now, we'll treat white as the "empty" pixel visually if no color is drawn
+        function setupCanvases() {
+            const canvasPixelWidth = gridWidth * pixelSize;
+            const canvasPixelHeight = gridHeight * pixelSize;
+
+            [pixelCanvas, onionSkinCanvas, selectionCanvas].forEach(c => {
+                c.width = canvasPixelWidth;
+                c.height = canvasPixelHeight;
+            });
+            ctx.imageSmoothingEnabled = false;
+            onionCtx.imageSmoothingEnabled = false;
+            selectionCtx.imageSmoothingEnabled = false;
+
+            canvasWrapper.style.width = canvasPixelWidth + 'px';
+            canvasWrapper.style.height = canvasPixelHeight + 'px';
+            
+            renderCurrentFrame();
         }
 
         function createPalette() {
@@ -735,99 +599,491 @@
                     colorPicker.value = color;
                     document.querySelectorAll('.color-swatch.selected').forEach(s => s.classList.remove('selected'));
                     swatch.classList.add('selected');
-                    if (currentTool === 'eyedropper') { // Switch back to pencil after picking
-                        setCurrentTool('pencil');
-                    }
+                    if (currentTool === 'eyedropper') setCurrentTool('pencil');
                 });
                 colorPaletteContainer.appendChild(swatch);
             });
-            // Select first color by default
-            if (colorPaletteContainer.firstChild) {
-                colorPaletteContainer.firstChild.click();
-            }
+            if (colorPaletteContainer.firstChild) colorPaletteContainer.firstChild.click();
         }
 
+        // --- State Management & Undo/Redo ---
+        function recordUndoState() {
+            if (currentFrameIndex < 0 || currentLayerIndex < 0) return;
+            const layer = frames[currentFrameIndex].layers[currentLayerIndex];
+            if (!layer) return;
 
-        // --- Drawing Logic ---
-        function drawGrid() {
-            if (!gridToggle.checked) return;
-            ctx.strokeStyle = '#ccc';
-            ctx.lineWidth = 0.5;
+            if (!layer.undoStack) layer.undoStack = [];
+            if (!layer.redoStack) layer.redoStack = [];
 
-            for (let x = 0; x <= gridWidth; x++) {
-                ctx.beginPath();
-                ctx.moveTo(x * pixelSize, 0);
-                ctx.lineTo(x * pixelSize, canvas.height);
-                ctx.stroke();
+            layer.redoStack = []; // Clear redo stack on new action
+            layer.undoStack.push(JSON.stringify(layer.data)); // Store as JSON string
+            if (layer.undoStack.length > MAX_UNDO_STEPS) {
+                layer.undoStack.shift(); // Limit stack size
             }
-            for (let y = 0; y <= gridHeight; y++) {
-                ctx.beginPath();
-                ctx.moveTo(0, y * pixelSize);
-                ctx.lineTo(canvas.width, y * pixelSize);
-                ctx.stroke();
-            }
+            updateUndoRedoButtons();
         }
 
-        function clearCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        function undo() {
+            if (currentFrameIndex < 0 || currentLayerIndex < 0) return;
+            const layer = frames[currentFrameIndex].layers[currentLayerIndex];
+            if (!layer || !layer.undoStack || layer.undoStack.length === 0) return;
+
+            const prevState = layer.undoStack.pop();
+            layer.redoStack.push(JSON.stringify(layer.data)); // Current state to redo
+            layer.data = JSON.parse(prevState);
+            
+            renderCurrentFrame();
+            updateUndoRedoButtons();
         }
 
-        function drawPixel(gridX, gridY, color) {
+        function redo() {
+            if (currentFrameIndex < 0 || currentLayerIndex < 0) return;
+            const layer = frames[currentFrameIndex].layers[currentLayerIndex];
+            if (!layer || !layer.redoStack || layer.redoStack.length === 0) return;
+
+            const nextState = layer.redoStack.pop();
+            layer.undoStack.push(JSON.stringify(layer.data)); // Current state to undo
+            layer.data = JSON.parse(nextState);
+
+            renderCurrentFrame();
+            updateUndoRedoButtons();
+        }
+        
+        function updateUndoRedoButtons() {
+            const layer = (currentFrameIndex >= 0 && currentLayerIndex >= 0) ? frames[currentFrameIndex].layers[currentLayerIndex] : null;
+            undoBtn.disabled = !(layer && layer.undoStack && layer.undoStack.length > 0);
+            redoBtn.disabled = !(layer && layer.redoStack && layer.redoStack.length > 0);
+        }
+
+        // --- Drawing Logic (Operates on Current Active Layer) ---
+        function drawPixel(gridX, gridY, color, recordUndo = true, layerOverride = null) {
             if (gridX < 0 || gridX >= gridWidth || gridY < 0 || gridY >= gridHeight) return;
+            if (currentFrameIndex < 0 && !layerOverride) return;
 
-            const frameData = frames[currentFrameIndex].data;
-            if (color === transparentColor) { // Eraser
-                delete frameData[`${gridX},${gridY}`];
+            const layer = layerOverride || (currentLayerIndex >=0 ? frames[currentFrameIndex].layers[currentLayerIndex] : null);
+            if (!layer) return;
+
+            if (recordUndo && !layerOverride) recordUndoState(); // Record before changing data
+
+            if (color === transparentColor) {
+                delete layer.data[`${gridX},${gridY}`];
             } else {
-                frameData[`${gridX},${gridY}`] = color;
+                layer.data[`${gridX},${gridY}`] = color;
             }
-            renderCurrentFrame(); // Redraw entire frame from data
+
+            // Symmetry
+            if (currentSymmetry !== 'none' && !layerOverride && recordUndo) { // Don't apply symmetry for template loading or non-primary draw
+                const symX = gridWidth - 1 - gridX;
+                const symY = gridHeight - 1 - gridY;
+
+                if (currentSymmetry === 'x' || currentSymmetry === 'xy') {
+                    if (symX !== gridX) { // Avoid double-drawing on axis
+                        if (color === transparentColor) delete layer.data[`${symX},${gridY}`];
+                        else layer.data[`${symX},${gridY}`] = color;
+                    }
+                }
+                if (currentSymmetry === 'y' || currentSymmetry === 'xy') {
+                     if (symY !== gridY) {
+                        if (color === transparentColor) delete layer.data[`${gridX},${symY}`];
+                        else layer.data[`${gridX},${symY}`] = color;
+                    }
+                }
+                if (currentSymmetry === 'xy') {
+                    if (symX !== gridX && symY !== gridY) { // Avoid axis again
+                         if (color === transparentColor) delete layer.data[`${symX},${symY}`];
+                         else layer.data[`${symX},${symY}`] = color;
+                    }
+                }
+            }
+             if (!layerOverride) renderCurrentFrame(); // Full re-render for active drawing
         }
 
-        function getPixelColor(gridX, gridY) {
-            const frameData = frames[currentFrameIndex].data;
-            return frameData[`${gridX},${gridY}`] || null; // null if transparent/empty
+        // Bresenham's line algorithm
+        function drawLine(x0, y0, x1, y1, color, recordUndo = true) {
+            if (recordUndo) recordUndoState(); // Single undo for the whole line
+
+            const dx = Math.abs(x1 - x0);
+            const dy = Math.abs(y1 - y0);
+            const sx = (x0 < x1) ? 1 : -1;
+            const sy = (y0 < y1) ? 1 : -1;
+            let err = dx - dy;
+
+            while (true) {
+                drawPixel(x0, y0, color, false); // false: don't record undo for each pixel of line
+                if ((x0 === x1) && (y0 === y1)) break;
+                let e2 = 2 * err;
+                if (e2 > -dy) { err -= dy; x0 += sx; }
+                if (e2 < dx) { err += dx; y0 += sy; }
+            }
+             if (recordUndo) renderCurrentFrame();
         }
 
+
+        function getPixelColorOnCanvas(canvasX, canvasY) { // Samples from visible canvas
+            const flatCtx = document.createElement('canvas').getContext('2d');
+            flatCtx.canvas.width = pixelCanvas.width;
+            flatCtx.canvas.height = pixelCanvas.height;
+            // Render all visible layers of current frame to this temp canvas
+            if(currentFrameIndex >=0){
+                frames[currentFrameIndex].layers.forEach(layer => {
+                    if (layer.visible) {
+                        flatCtx.globalAlpha = layer.opacity;
+                        Object.entries(layer.data).forEach(([key, color]) => {
+                            const [x, y] = key.split(',').map(Number);
+                            flatCtx.fillStyle = color;
+                            flatCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+                        });
+                    }
+                });
+            }
+            flatCtx.globalAlpha = 1.0;
+            const pixelData = flatCtx.getImageData(Math.floor(canvasX), Math.floor(canvasY), 1, 1).data;
+            if (pixelData[3] < 255) return null; // If transparent from canvas, treat as no color picked
+            return `#${pixelData[0].toString(16).padStart(2, '0')}${pixelData[1].toString(16).padStart(2, '0')}${pixelData[2].toString(16).padStart(2, '0')}`;
+        }
+        
+        function getPixelColorFromLayer(gridX, gridY, layer) {
+            if (!layer) return null;
+            return layer.data[`${gridX},${gridY}`] || null;
+        }
 
         function floodFill(startX, startY, fillColor) {
-            const targetColor = getPixelColor(startX, startY);
+            if (currentFrameIndex < 0 || currentLayerIndex < 0) return;
+            const layer = frames[currentFrameIndex].layers[currentLayerIndex];
+            if (!layer) return;
 
-            if (fillColor === targetColor) return; // Already filled or trying to fill with same color
+            const targetColor = getPixelColorFromLayer(startX, startY, layer);
+            if (fillColor === targetColor && targetColor !== null) return; // Already filled or trying to fill with same color (unless filling transparent)
+            if (fillColor === null && targetColor === null) return; // Filling transparent with transparent
+
+
+            recordUndoState(); // Record before fill
 
             const stack = [[startX, startY]];
             const visited = new Set();
-            const frameData = frames[currentFrameIndex].data;
 
             while (stack.length > 0) {
                 const [x, y] = stack.pop();
 
                 if (x < 0 || x >= gridWidth || y < 0 || y >= gridHeight) continue;
-                if (visited.has(`${x},${y}`)) continue;
+                const coordKey = `${x},${y}`;
+                if (visited.has(coordKey)) continue;
 
-                const currentColorAtPixel = getPixelColor(x, y);
+                const currentColorAtPixel = getPixelColorFromLayer(x,y,layer);
 
-                if (currentColorAtPixel === targetColor || (!targetColor && !currentColorAtPixel)) { // Match target or empty
+                if (currentColorAtPixel === targetColor || (targetColor === null && currentColorAtPixel === null)) {
                     if (fillColor === transparentColor) {
-                        delete frameData[`${x},${y}`];
+                        delete layer.data[coordKey];
                     } else {
-                        frameData[`${x},${y}`] = fillColor;
+                        layer.data[coordKey] = fillColor;
                     }
-                    visited.add(`${x},${y}`);
+                    visited.add(coordKey);
 
-                    stack.push([x + 1, y]);
-                    stack.push([x - 1, y]);
-                    stack.push([x, y + 1]);
-                    stack.push([x, y - 1]);
+                    stack.push([x + 1, y]); stack.push([x - 1, y]);
+                    stack.push([x, y + 1]); stack.push([x, y - 1]);
                 }
             }
+            renderCurrentFrame();
+        }
+
+        // --- Canvas Rendering ---
+        function clearCanvas(targetCtx = ctx) {
+            targetCtx.clearRect(0, 0, targetCtx.canvas.width, targetCtx.canvas.height);
+        }
+
+        function renderCurrentFrame() {
+            clearCanvas(ctx); // Clear main drawing canvas
+
+            if (currentFrameIndex < 0 || !frames[currentFrameIndex]) {
+                drawGrid(); // Draw grid even if no frame
+                return;
+            }
+
+            const frame = frames[currentFrameIndex];
+            // Render layers in order
+            frame.layers.forEach(layer => {
+                if (layer.visible) {
+                    ctx.globalAlpha = layer.opacity;
+                    Object.entries(layer.data).forEach(([key, color]) => {
+                        const [x, y] = key.split(',').map(Number);
+                        ctx.fillStyle = color;
+                        ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+                    });
+                }
+            });
+            ctx.globalAlpha = 1.0; // Reset global alpha
+
+            drawGrid();
+            drawOnionSkin();
+            drawSelectionOutline(); // After main content and onion skin, before other overlays
+
+            // Update frame preview
+            frame.previewUrl = generateCompositeFramePreview(frame);
+            const activeFrameLi = framesListUI.querySelector(`li[data-index="${currentFrameIndex}"] .item-preview`);
+            if (activeFrameLi) activeFrameLi.src = frame.previewUrl;
+
+            // Update layer preview (if active layer is in active frame)
+            if (currentLayerIndex >=0 && frame.layers[currentLayerIndex]){
+                 const activeLayer = frame.layers[currentLayerIndex];
+                 activeLayer.previewUrl = generateLayerPreview(activeLayer.data);
+                 const activeLayerLi = layersListUI.querySelector(`li[data-index="${currentLayerIndex}"] .item-preview`);
+                 if (activeLayerLi) activeLayerLi.src = activeLayer.previewUrl;
+            }
+            centerArtOnCanvas();
+        }
+        
+        function centerArtOnCanvas() {
+            if (!centerCanvasToggle.checked || currentFrameIndex < 0) {
+                canvasWrapper.style.justifyContent = 'flex-start';
+                canvasWrapper.style.alignItems = 'flex-start';
+                return;
+            }
+            // This is tricky with absolute positioned canvases within a wrapper.
+            // A simpler approach is to ensure the wrapper itself centers its content
+            // if the content is smaller than the wrapper.
+            // The current canvasWrapper with overflow:auto handles this if canvas is larger.
+            // For smaller canvases, CSS on canvasWrapper would be:
+            // display: flex; justify-content: center; align-items: center;
+            // However, our canvases are absolutely positioned...
+            // Let's adjust margins of the actual canvas elements if they are smaller than wrapper.
+            // This is more complex than it seems. For now, the overflow:auto on wrapper is the main behavior.
+        }
+
+
+        function drawGrid() {
+            if (!gridToggle.checked) return;
+            ctx.strokeStyle = '#cccccc';
+            ctx.lineWidth = 0.5; // Use 0.5 for finer lines if browser supports it well
+
+            for (let i = 0; i <= gridWidth; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * pixelSize -0.5, -0.5); // Offset by 0.5 for crisp lines
+                ctx.lineTo(i * pixelSize -0.5, pixelCanvas.height -0.5);
+                ctx.stroke();
+            }
+            for (let i = 0; i <= gridHeight; i++) {
+                ctx.beginPath();
+                ctx.moveTo(-0.5, i * pixelSize -0.5);
+                ctx.lineTo(pixelCanvas.width -0.5, i * pixelSize -0.5);
+                ctx.stroke();
+            }
+        }
+        
+        // --- Selection ---
+        function startSelection(startX, startY) {
+            isDrawing = true; // Use isDrawing flag for selection dragging
+            selectionRect = { x: startX, y: startY, w: 0, h: 0 };
+            drawSelectionOutline();
+        }
+
+        function updateSelection(currX, currY) {
+            if (!isDrawing || !selectionRect) return;
+            selectionRect.w = currX - selectionRect.x;
+            selectionRect.h = currY - selectionRect.y;
+            drawSelectionOutline();
+        }
+
+        function endSelection() {
+            isDrawing = false;
+            if (selectionRect) {
+                // Normalize selectionRect (ensure w and h are positive)
+                if (selectionRect.w < 0) {
+                    selectionRect.x += selectionRect.w;
+                    selectionRect.w *= -1;
+                }
+                if (selectionRect.h < 0) {
+                    selectionRect.y += selectionRect.h;
+                    selectionRect.h *= -1;
+                }
+                // Ensure selection is within bounds
+                selectionRect.x = Math.max(0, Math.min(gridWidth - 1, selectionRect.x));
+                selectionRect.y = Math.max(0, Math.min(gridHeight - 1, selectionRect.y));
+                selectionRect.w = Math.min(gridWidth - selectionRect.x, selectionRect.w);
+                selectionRect.h = Math.min(gridHeight - selectionRect.y, selectionRect.h);
+
+                if (selectionRect.w === 0 || selectionRect.h === 0) {
+                    deselect();
+                } else {
+                    selectionActionsUI.style.display = 'flex';
+                }
+            }
+            drawSelectionOutline();
+        }
+
+        function drawSelectionOutline() {
+            clearCanvas(selectionCtx);
+            if (!selectionRect) return;
+
+            selectionCtx.strokeStyle = 'rgba(0, 0, 255, 0.7)';
+            selectionCtx.lineWidth = 1;
+            selectionCtx.setLineDash([3, 3]);
+            selectionCtx.strokeRect(
+                selectionRect.x * pixelSize,
+                selectionRect.y * pixelSize,
+                selectionRect.w * pixelSize,
+                selectionRect.h * pixelSize
+            );
+            selectionCtx.setLineDash([]); // Reset line dash
+
+            if (isMovingSelection && selectionPixelData) {
+                 // Draw the moving pixels preview
+                 Object.entries(selectionPixelData).forEach(([key, color]) => {
+                    let [px, py] = key.split(',').map(Number); // Original relative coords
+                    // Current absolute grid coords
+                    let currentGridX = selectionRect.x + px + selectionMoveOffset.dx;
+                    let currentGridY = selectionRect.y + py + selectionMoveOffset.dy;
+                    
+                    if (currentGridX >= 0 && currentGridX < gridWidth && currentGridY >= 0 && currentGridY < gridHeight) {
+                         selectionCtx.fillStyle = color;
+                         selectionCtx.fillRect(currentGridX * pixelSize, currentGridY * pixelSize, pixelSize, pixelSize);
+                    }
+                });
+            }
+        }
+
+        function deselect() {
+            selectionRect = null;
+            isMovingSelection = false;
+            selectionPixelData = null;
+            selectionActionsUI.style.display = 'none';
+            clearCanvas(selectionCtx);
+             setCurrentTool('pencil'); // Optionally switch back
+        }
+
+        function startMoveSelection(canvasGridX, canvasGridY) {
+            if (!selectionRect || currentFrameIndex < 0 || currentLayerIndex < 0) return;
+            
+            const layer = frames[currentFrameIndex].layers[currentLayerIndex];
+            if (!layer) return;
+
+            // Check if click is inside selectionRect
+            if (canvasGridX >= selectionRect.x && canvasGridX < selectionRect.x + selectionRect.w &&
+                canvasGridY >= selectionRect.y && canvasGridY < selectionRect.y + selectionRect.h) {
+                
+                isMovingSelection = true;
+                selectionPixelData = {}; // Store pixels relative to selectionRect.x, selectionRect.y
+                
+                recordUndoState(); // Record state before modifying layer
+
+                for (let i = 0; i < selectionRect.w; i++) {
+                    for (let j = 0; j < selectionRect.h; j++) {
+                        const Gx = selectionRect.x + i;
+                        const Gy = selectionRect.y + j;
+                        const color = layer.data[`${Gx},${Gy}`];
+                        if (color) {
+                            selectionPixelData[`${i},${j}`] = color; // Store with relative coords
+                            delete layer.data[`${Gx},${Gy}`]; // Clear from original position
+                        }
+                    }
+                }
+                // Initial offset calculation
+                selectionMoveOffset = { 
+                    dx: canvasGridX - selectionRect.x, 
+                    dy: canvasGridY - selectionRect.y 
+                };
+
+                renderCurrentFrame(); // Redraw main canvas without moved pixels
+                drawSelectionOutline(); // Draw selection border and preview of moving pixels
+            }
+        }
+
+        function updateMoveSelection(canvasGridX, canvasGridY) {
+            if (!isMovingSelection || !selectionRect || !selectionPixelData) return;
+            
+            // Update offset based on mouse movement relative to initial click in selection
+            // This interpretation is a bit off. It should be: new selectionRect position.
+            // selectionRect.x/y represents the top-left of the "hole" or where the data *was*.
+            // For preview, we need the current mouse position relative to the *start* of the drag.
+            // Let's adjust selectionMoveOffset based on total mouse delta from start of move
+            selectionMoveOffset.dx = canvasGridX - (selectionRect.x + (selectionRect.w / 2)); // Or use the initial click point
+            selectionMoveOffset.dy = canvasGridY - (selectionRect.y + (selectionRect.h / 2));
+            // The above is tricky. simpler: current mouse is new top-left of moving data:
+            // selectionMoveOffset = { dx: canvasGridX - selectionRect.x, dy: canvasGridY - selectionRect.y };
+            // This still feels off. Let's stick to this: selectionMoveOffset tracks the *current displacement*
+            // of the top-left corner of the *selectionPixelData bounding box* from the *original selectionRect.x, .y*.
+            
+            // The dx, dy needs to be the difference from original selectionRect top-left to current mouse pos.
+            // Or, more simply, the new top-left of the selection data is (canvasGridX - dragStartOffsetX, canvasGridY - dragStartOffsetY)
+            // Let's store dragStartOffset when move begins.
+            // For now: selectionMoveOffset stores the *current* grid offset for the preview.
+            // The actual `selectionRect` itself isn't moving during the drag preview. Its outline stays.
+            // The *content* is moving.
+            
+            // This needs a rethink for intuitive dragging. For now, preview will follow mouse.
+            // The selectionMoveOffset.dx/dy is the offset of the *content* from original selectionRect.x/y
+            // The initial click point inside the selection matters.
+            // Let's use a simpler model: selectionMoveOffset is the new top-left of the *content*.
+            // selectionMoveOffset.dx = canvasGridX - (drag_start_offset_within_selection_x);
+            // selectionMoveOffset.dy = canvasGridY - (drag_start_offset_within_selection_y);
+            // This is becoming overly complex for this iteration.
+            // Simpler: selectionMoveOffset stores the top-left of the *moving data block* relative to grid 0,0.
+            // When move starts:
+            // dragStartGridPos = {x: canvasGridX, y: canvasGridY};
+            // movingDataTopLeftStart = {x: selectionRect.x, y: selectionRect.y};
+            // When mouse moves:
+            // mouseDelta = {dx: canvasGridX - dragStartGridPos.x, dy: canvasGridY - dragStartGridPos.y};
+            // selectionMoveOffset.dx = mouseDelta.dx; // This is offset from original selectionRect.x/y
+            // selectionMoveOffset.dy = mouseDelta.dy;
+            // This is better. selectionMoveOffset is the delta.
+
+            // On mouse down for move, capture initial offset of mouse within the selection box:
+            // dragAnchorInSelection = { x: canvasGridX - selectionRect.x, y: canvasGridY - selectionRect.y };
+            // Then on move:
+            // selectionMoveOffset.dx = canvasGridX - selectionRect.x - dragAnchorInSelection.x;
+            // selectionMoveOffset.dy = canvasGridY - selectionRect.y - dragAnchorInSelection.y;
+
+            // For this implementation, let's assume selectionMoveOffset IS the delta.
+            // When move starts: selectionMoveOffset = {dx:0, dy:0}. Initial preview at original spot.
+            // Then, delta is mouse_current - mouse_start_of_drag.
+            // This is still not working cleanly.
+
+            // Let's use current mouse position to define the new top-left of the *data*, relative to where it was.
+            // This means dx, dy are grid cell offsets from original selectionRect x,y.
+            // The `selectionMoveOffset` is added to `selectionRect.x` and `selectionRect.y` to determine
+            // where to draw the `selectionPixelData`.
+            
+            // A simple way: update selectionMoveOffset to be the delta from original top-left of selection.
+            // This requires storing the initial mouse position of the drag.
+            // Let's simplify: `selectionMoveOffset` is the *total* offset.
+            // And `lastDrawPoint` (repurposed) stores the *previous* mouse grid pos during move.
+            if (lastDrawPoint) {
+                 selectionMoveOffset.dx += canvasGridX - lastDrawPoint.x;
+                 selectionMoveOffset.dy += canvasGridY - lastDrawPoint.y;
+            }
+            lastDrawPoint = {x: canvasGridX, y: canvasGridY}; // Update for next move event
+
+
+            drawSelectionOutline(); // Redraws the preview of moving pixels
+        }
+
+        function endMoveSelection() {
+            if (!isMovingSelection || !selectionRect || !selectionPixelData || currentFrameIndex < 0 || currentLayerIndex < 0) return;
+            
+            const layer = frames[currentFrameIndex].layers[currentLayerIndex];
+            if (!layer) return;
+
+            // Apply pixels to new location
+            Object.entries(selectionPixelData).forEach(([key, color]) => {
+                let [px, py] = key.split(',').map(Number); // Relative coords
+                let finalGridX = selectionRect.x + px + selectionMoveOffset.dx;
+                let finalGridY = selectionRect.y + py + selectionMoveOffset.dy;
+
+                if (finalGridX >= 0 && finalGridX < gridWidth && finalGridY >= 0 && finalGridY < gridHeight) {
+                    layer.data[`${finalGridX},${finalGridY}`] = color;
+                }
+            });
+
+            isMovingSelection = false;
+            selectionPixelData = null;
+            // Update selectionRect to new position, or deselect? For now, deselect.
+            deselect(); 
             renderCurrentFrame();
         }
 
 
         // --- Canvas Event Handlers ---
         function getMousePos(event) {
-            const rect = canvas.getBoundingClientRect();
+            const rect = pixelCanvas.getBoundingClientRect();
             let clientX, clientY;
             if (event.touches && event.touches.length > 0) {
                 clientX = event.touches[0].clientX;
@@ -836,8 +1092,8 @@
                 clientX = event.clientX;
                 clientY = event.clientY;
             }
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
+            const scaleX = pixelCanvas.width / rect.width; // Assuming canvas is not CSS-scaled differently in X and Y
+            const scaleY = pixelCanvas.height / rect.height;
             const canvasX = (clientX - rect.left) * scaleX;
             const canvasY = (clientY - rect.top) * scaleY;
             const gridX = Math.floor(canvasX / pixelSize);
@@ -845,206 +1101,459 @@
             return { x: gridX, y: gridY, canvasX, canvasY };
         }
 
-        function handleCanvasInteraction(event) {
-            event.preventDefault(); // Important for touch events
-            if (currentFrameIndex < 0) return; // No active frame
+        function handleCanvasMouseDown(event) {
+            if (event.button !== 0 && !(event.touches && event.touches.length > 0)) return; // Allow touch, or left mouse button
+            event.preventDefault();
+            if (currentFrameIndex < 0 || (currentLayerIndex < 0 && currentTool !== 'selection')) return;
 
-            const { x, y } = getMousePos(event);
+            const { x, y, canvasX, canvasY } = getMousePos(event);
+            lastDrawPoint = {x,y};
 
-            if (currentTool === 'pencil') {
-                drawPixel(x, y, currentColor);
-            } else if (currentTool === 'eraser') {
-                drawPixel(x, y, transparentColor);
-            }
-        }
-
-        canvas.addEventListener('mousedown', (e) => {
-            if (e.button !== 0) return; // Only left click
-            isDrawing = true;
-            handleCanvasInteraction(e);
-        });
-        canvas.addEventListener('touchstart', (e) => {
-            isDrawing = true;
-            handleCanvasInteraction(e);
-        });
-
-        canvas.addEventListener('mousemove', (e) => {
-            if (!isDrawing) return;
-            handleCanvasInteraction(e);
-        });
-         canvas.addEventListener('touchmove', (e) => {
-            if (!isDrawing) return;
-            handleCanvasInteraction(e);
-        });
-
-        canvas.addEventListener('mouseup', () => { isDrawing = false; });
-        canvas.addEventListener('touchend', () => { isDrawing = false; });
-        canvas.addEventListener('mouseleave', () => { isDrawing = false; });
-
-        canvas.addEventListener('click', (e) => {
-            if (currentFrameIndex < 0) return;
-            const { x, y, canvasX, canvasY } = getMousePos(e);
-
-            if (currentTool === 'fill') {
+            if (currentTool === 'pencil' || currentTool === 'eraser') {
+                isDrawing = true;
+                const colorToDraw = currentTool === 'eraser' ? transparentColor : currentColor;
+                drawPixel(x, y, colorToDraw); // Draw first pixel immediately
+            } else if (currentTool === 'fill') {
                 floodFill(x, y, currentColor);
             } else if (currentTool === 'eyedropper') {
-                const pixelData = ctx.getImageData(Math.floor(canvasX), Math.floor(canvasY), 1, 1).data;
-                const r = pixelData[0];
-                const g = pixelData[1];
-                const b = pixelData[2];
-                // Note: Alpha (pixelData[3]) is not directly used here, assuming opaque colors from palette
-                // If drawing with alpha, this would need adjustment.
-                const hexColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-
-                // Find this color in palette or add it
-                let swatch = Array.from(colorPaletteContainer.children).find(s => s.style.backgroundColor === `rgb(${r}, ${g}, ${b})`);
-                if (swatch) {
-                    swatch.click();
-                } else {
-                    // If not in palette, just set color picker. Could also add to palette.
-                    colorPicker.value = hexColor;
-                    currentColor = hexColor;
+                const pickedColor = getPixelColorOnCanvas(canvasX, canvasY);
+                if (pickedColor) {
+                    currentColor = pickedColor;
+                    colorPicker.value = pickedColor;
+                    // Try to select in palette
+                    let swatch = Array.from(colorPaletteContainer.children).find(s => s.style.backgroundColor.toLowerCase() === pickedColor.toLowerCase() || rgbToHex(s.style.backgroundColor) === pickedColor.toLowerCase());
+                    if (swatch) swatch.click(); else document.querySelectorAll('.color-swatch.selected').forEach(s => s.classList.remove('selected'));
                 }
-                 setCurrentTool('pencil'); // Switch back to pencil
+                setCurrentTool('pencil');
+            } else if (currentTool === 'selection') {
+                if (isMovingSelection) { // Clicked while already moving selection
+                    // This means to drop the selection
+                    endMoveSelection();
+                } else if (selectionRect && x >= selectionRect.x && x < selectionRect.x + selectionRect.w &&
+                           y >= selectionRect.y && y < selectionRect.y + selectionRect.h) {
+                    // Click inside existing selection - prepare to move
+                    // This is handled by moveSelectionBtn click now.
+                    // OR, could make selection draggable directly.
+                    // For now, mousedown on selected area when tool is 'selection' could initiate move.
+                    // This might be complex. Let's rely on "Move" button.
+                    // If we want direct drag:
+                    // startMoveSelection(x, y); // This needs the original click point for offsets.
+                } else {
+                    // Start new selection
+                    deselect(); // Clear previous selection first
+                    startSelection(x, y);
+                }
             }
+        }
+        
+        function handleCanvasMouseMove(event) {
+            event.preventDefault();
+            if (!isDrawing && !isMovingSelection) return;
+            if (currentFrameIndex < 0 || (currentLayerIndex < 0 && currentTool !== 'selection')) return;
+            
+            const { x, y } = getMousePos(event);
+
+            if (currentTool === 'pencil' || currentTool === 'eraser') {
+                 if (isDrawing && lastDrawPoint) {
+                    const colorToDraw = currentTool === 'eraser' ? transparentColor : currentColor;
+                    drawLine(lastDrawPoint.x, lastDrawPoint.y, x, y, colorToDraw, false); // Don't recordUndo for intermediate line points
+                    lastDrawPoint = { x, y }; // Update last point
+                    renderCurrentFrame(); // Render after line segment
+                 }
+            } else if (currentTool === 'selection' && isDrawing && !isMovingSelection) { // Dragging to define selection area
+                updateSelection(x, y);
+            } else if (isMovingSelection) { // Moving the selected content
+                updateMoveSelection(x, y);
+            }
+        }
+
+        function handleCanvasMouseUp(event) {
+            event.preventDefault();
+            if (currentTool === 'pencil' || currentTool === 'eraser') {
+                if(isDrawing) {
+                    // The last drawPixel/drawLine should have recorded undo or renderCurrentFrame handles it.
+                    // If line drawing, the final renderCurrentFrame is important.
+                    isDrawing = false;
+                    lastDrawPoint = null;
+                    renderCurrentFrame(); // Ensure final state is rendered and previews updated
+                }
+            } else if (currentTool === 'selection' && isDrawing && !isMovingSelection) {
+                endSelection(); // Finalize selection box
+            } else if (isMovingSelection) {
+                // Mouse up during move selection is handled by explicit drop (another click or button)
+                // Or, if we want mouseup to drop:
+                // endMoveSelection();
+            }
+            isDrawing = false; // General flag reset
+        }
+
+        pixelCanvas.addEventListener('mousedown', handleCanvasMouseDown);
+        pixelCanvas.addEventListener('mousemove', handleCanvasMouseMove);
+        pixelCanvas.addEventListener('mouseup', handleCanvasMouseUp);
+        pixelCanvas.addEventListener('mouseleave', () => {
+             if (isDrawing && (currentTool === 'pencil' || currentTool === 'eraser')) {
+                 // If mouse leaves while drawing line, treat as mouseup
+                 handleCanvasMouseUp(new MouseEvent('mouseup')); 
+             } else if (currentTool === 'selection' && isDrawing && !isMovingSelection) {
+                 endSelection();
+             }
+             // Do not end isMovingSelection on mouseleave, user might be moving selection off-canvas then back
         });
 
-        // --- Tool Selection ---
+        pixelCanvas.addEventListener('touchstart', handleCanvasMouseDown, { passive: false });
+        pixelCanvas.addEventListener('touchmove', handleCanvasMouseMove, { passive: false });
+        pixelCanvas.addEventListener('touchend', handleCanvasMouseUp, { passive: false });
+
+
+        // --- Tool & UI Updates ---
         function setCurrentTool(toolName) {
             currentTool = toolName;
-            updateToolButtons();
-            canvas.style.cursor = (toolName === 'eyedropper' || toolName === 'fill') ? 'copy' : 'crosshair';
+            toolBtns.forEach(btn => btn.classList.toggle('active', btn.id.startsWith(toolName)));
+            
+            selectionActionsUI.style.display = (toolName === 'selection' && selectionRect) ? 'flex' : 'none';
+            
+            if (toolName !== 'selection' && !isMovingSelection) { // If not selection tool, and not in middle of move
+                deselect(); // Clear any existing selection
+            }
+
+            if (toolName === 'selection' && isMovingSelection) {
+                // If tool switched mid-move, finalize the move.
+                endMoveSelection();
+            }
+
+            pixelCanvas.style.cursor = (toolName === 'eyedropper' || toolName === 'fill') ? 'copy' :
+                                     (toolName === 'selection' && selectionRect) ? 'grab' : // or 'move' if over selection
+                                     'crosshair';
         }
-        function updateToolButtons() {
-            toolBtns.forEach(btn => {
-                if (btn.id.startsWith(currentTool)) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
+
+        function updateAllUI() {
+            updateFramesList();
+            updateLayersList();
+            updateUndoRedoButtons();
+            updateToolButtonsStates();
+            updateCurrentInfo();
         }
-        pencilToolBtn.addEventListener('click', () => setCurrentTool('pencil'));
-        eraserToolBtn.addEventListener('click', () => setCurrentTool('eraser'));
-        fillToolBtn.addEventListener('click', () => setCurrentTool('fill'));
-        eyedropperToolBtn.addEventListener('click', () => setCurrentTool('eyedropper'));
+
+        function updateToolButtonsStates() {
+            deleteFrameBtn.disabled = !(frames.length > 1 && currentFrameIndex >= 0);
+            duplicateFrameBtn.disabled = currentFrameIndex < 0;
+            
+            const layersExist = currentFrameIndex >= 0 && frames[currentFrameIndex] && frames[currentFrameIndex].layers.length > 0;
+            deleteLayerBtn.disabled = !(layersExist && frames[currentFrameIndex].layers.length > 1 && currentLayerIndex >= 0);
+            
+            moveLayerUpBtn.disabled = !(layersExist && currentLayerIndex > 0);
+            moveLayerDownBtn.disabled = !(layersExist && currentLayerIndex < frames[currentFrameIndex].layers.length - 1);
+
+            clearLayerBtn.disabled = currentLayerIndex < 0;
+            fillLayerBtn.disabled = currentLayerIndex < 0;
+        }
+
+        function updateCurrentInfo() {
+            currentFrameInfoUI.textContent = currentFrameIndex >=0 ? `(${currentFrameIndex+1}/${frames.length})` : '(No Frame)';
+            if (currentFrameIndex >=0 && frames[currentFrameIndex] && currentLayerIndex >=0 && frames[currentFrameIndex].layers[currentLayerIndex]) {
+                const layer = frames[currentFrameIndex].layers[currentLayerIndex];
+                currentLayerInfoUI.textContent = `(${layer.name} - ${currentLayerIndex+1}/${frames[currentFrameIndex].layers.length})`;
+            } else {
+                currentLayerInfoUI.textContent = '(No Layer)';
+            }
+        }
 
         // --- Frame Management ---
-        function addFrame(dataToCopy = null) {
-            const newFrameData = dataToCopy ? JSON.parse(JSON.stringify(dataToCopy)) : {}; // Deep copy
-            const newFrame = {
-                id: Date.now() + Math.random(), // Unique ID
-                data: newFrameData,
-                previewUrl: ''
-            };
-            frames.push(newFrame);
-            currentFrameIndex = frames.length - 1;
-            updateFramesList();
-            loadFrame(currentFrameIndex);
+        function addNewFrame(frameDataToCopy = null, insertAfterIndex = null) {
+            let newFrame;
+            if (frameDataToCopy) { // Deep copy, including layers
+                newFrame = JSON.parse(JSON.stringify(frameDataToCopy));
+                newFrame.id = Date.now() + Math.random(); // New unique ID
+                // Ensure layers also get new undo/redo stacks if they are part of copy
+                newFrame.layers.forEach(l => { l.undoStack = []; l.redoStack = []; });
+            } else {
+                newFrame = {
+                    id: Date.now() + Math.random(),
+                    layers: [], // Initially no layers, add one below
+                    previewUrl: ''
+                };
+            }
+
+            const targetIndex = (insertAfterIndex !== null) ? insertAfterIndex + 1 : frames.length;
+            frames.splice(targetIndex, 0, newFrame);
+            
+            currentFrameIndex = targetIndex;
+
+            if (newFrame.layers.length === 0) { // If it's a brand new frame or copied frame had no layers
+                addNewLayer(true); // Add a default layer and select it
+            } else {
+                 currentLayerIndex = Math.max(0, newFrame.layers.length - 1); // Select last layer of new frame
+            }
+            
+            updateAllUI();
+            loadFrame(currentFrameIndex); // This will also load layer 0 of the new frame
         }
 
-        function duplicateFrame() {
-            if (currentFrameIndex < 0 || frames.length === 0) return;
-            addFrame(frames[currentFrameIndex].data);
+        function duplicateCurrentFrame() {
+            if (currentFrameIndex < 0) return;
+            addNewFrame(frames[currentFrameIndex], currentFrameIndex);
         }
 
-        function deleteFrame(index) {
-            if (frames.length <= 1) { // Keep at least one frame
-                alert("Cannot delete the last frame. Clear it instead if needed.");
+        function deleteCurrentFrame() {
+            if (frames.length <= 1 || currentFrameIndex < 0) {
+                alert("Cannot delete the last frame.");
                 return;
             }
-            frames.splice(index, 1);
-            if (currentFrameIndex >= index) {
-                currentFrameIndex = Math.max(0, currentFrameIndex - 1);
-            }
-            updateFramesList();
-            if (frames.length > 0) {
-                loadFrame(currentFrameIndex);
-            } else {
-                // This case should not be reached due to the guard above
-                clearCanvas();
-                drawGrid();
-            }
+            frames.splice(currentFrameIndex, 1);
+            currentFrameIndex = Math.max(0, currentFrameIndex - 1);
+            if (frames.length === 0) currentFrameIndex = -1; // Should not happen due to guard
+            
+            updateAllUI();
+            if (currentFrameIndex >=0) loadFrame(currentFrameIndex);
+            else renderCurrentFrame(); // Clear canvas if no frames left
         }
 
-        function moveFrame(index, direction) { // direction is -1 for up, 1 for down
+        function loadFrame(index) {
             if (index < 0 || index >= frames.length) return;
-            const targetIndex = index + direction;
-            if (targetIndex < 0 || targetIndex >= frames.length) return;
-
-            const frameToMove = frames.splice(index, 1)[0];
-            frames.splice(targetIndex, 0, frameToMove);
-
-            // Update currentFrameIndex if it was the one moved or affected by the move
-            if (currentFrameIndex === index) {
-                currentFrameIndex = targetIndex;
-            } else if (currentFrameIndex === targetIndex) {
-                currentFrameIndex = index;
+            currentFrameIndex = index;
+            
+            // Attempt to keep current layer index or select the first one if new frame
+            const frame = frames[currentFrameIndex];
+            if (!frame.layers || frame.layers.length === 0) {
+                addNewLayer(true); // Add and select first layer if none exist
+            } else {
+                 // If currentLayerIndex is invalid for this frame, reset to 0 or last valid
+                 if (currentLayerIndex >= frame.layers.length || currentLayerIndex < 0) {
+                     currentLayerIndex = 0;
+                 }
+                 // If layer 0 exists, load it, otherwise this state is problematic.
+                 if (frame.layers[currentLayerIndex]) {
+                    loadLayer(currentLayerIndex); // This will also call renderCurrentFrame
+                 } else if (frame.layers.length > 0) {
+                    loadLayer(0); // Fallback to first layer
+                 } else {
+                    // This case means frame has no layers after checks, should not happen with addNewLayer logic
+                    currentLayerIndex = -1;
+                    renderCurrentFrame(); // Render empty frame
+                 }
             }
-
-            updateFramesList();
-            loadFrame(currentFrameIndex); // Reload the current frame as its index might have changed
+            updateAllUI(); // Update lists and buttons
         }
-
-
+        
         function updateFramesList() {
             framesListUI.innerHTML = '';
             frames.forEach((frame, index) => {
                 const listItem = document.createElement('li');
                 listItem.dataset.index = index;
-                if (index === currentFrameIndex) {
-                    listItem.classList.add('active-frame');
-                }
+                if (index === currentFrameIndex) listItem.classList.add('active-item');
 
                 const previewImg = document.createElement('img');
-                previewImg.classList.add('frame-preview');
-                previewImg.src = frame.previewUrl || generateFramePreview(frame.data); // Generate if not cached
-                frame.previewUrl = previewImg.src; // Cache it
+                previewImg.classList.add('item-preview');
+                // Generate preview if not cached or if it needs update
+                frame.previewUrl = generateCompositeFramePreview(frame);
+                previewImg.src = frame.previewUrl;
 
                 const frameInfo = document.createElement('span');
+                frameInfo.classList.add('item-name');
                 frameInfo.textContent = `Frame ${index + 1}`;
-
+                
+                // Quick actions (Move Up/Down can be added here too)
                 const frameActions = document.createElement('div');
-                frameActions.classList.add('frame-actions');
-
-                const delBtn = document.createElement('button');
-                delBtn.textContent = 'Del';
-                delBtn.onclick = (e) => { e.stopPropagation(); deleteFrame(index); };
-
-                const upBtn = document.createElement('button');
-                upBtn.textContent = '↑';
-                upBtn.disabled = index === 0;
-                upBtn.onclick = (e) => { e.stopPropagation(); moveFrame(index, -1); };
-
-                const downBtn = document.createElement('button');
-                downBtn.textContent = '↓';
-                downBtn.disabled = index === frames.length - 1;
-                downBtn.onclick = (e) => { e.stopPropagation(); moveFrame(index, 1); };
-
-                frameActions.appendChild(upBtn);
-                frameActions.appendChild(downBtn);
-                frameActions.appendChild(delBtn);
+                frameActions.classList.add('item-actions');
+                // Basic delete for now, more actions possible.
+                // Delete button handled by global "Delete Frame" button for selected frame.
 
                 listItem.appendChild(previewImg);
                 listItem.appendChild(frameInfo);
                 listItem.appendChild(frameActions);
-
-                listItem.addEventListener('click', () => {
-                    loadFrame(index);
-                });
+                listItem.addEventListener('click', () => loadFrame(index));
                 framesListUI.appendChild(listItem);
             });
+            updateToolButtonsStates();
+            updateCurrentInfo();
         }
 
-        function generateFramePreview(frameData) {
+        function generateCompositeFramePreview(frame) { // Renders all visible layers of a frame
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = gridWidth; tempCanvas.height = gridHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.imageSmoothingEnabled = false;
+            tempCtx.fillStyle = '#FFFFFF'; // Preview BG
+            tempCtx.fillRect(0,0, gridWidth, gridHeight);
+
+            frame.layers.forEach(layer => {
+                if (layer.visible) {
+                    tempCtx.globalAlpha = layer.opacity;
+                    Object.entries(layer.data).forEach(([key, color]) => {
+                        const [x, y] = key.split(',').map(Number);
+                        tempCtx.fillStyle = color;
+                        tempCtx.fillRect(x, y, 1, 1);
+                    });
+                }
+            });
+            return tempCanvas.toDataURL();
+        }
+
+
+        // --- Layer Management ---
+        let layerIdCounter = 0;
+        function addNewLayer(selectNewLayer = false, layerDataToCopy = null) {
+            if (currentFrameIndex < 0) return;
+            const frame = frames[currentFrameIndex];
+
+            let newLayer;
+            if (layerDataToCopy) {
+                newLayer = JSON.parse(JSON.stringify(layerDataToCopy)); // Deep copy
+                newLayer.id = `layer-${layerIdCounter++}`;
+                newLayer.name = layerDataToCopy.name + " Copy";
+                // Reset undo/redo for copied layer
+                newLayer.undoStack = [];
+                newLayer.redoStack = [];
+            } else {
+                newLayer = {
+                    id: `layer-${layerIdCounter++}`,
+                    name: `Layer ${frame.layers.length + 1}`,
+                    data: {}, // pixel data as {'x,y': '#color'}
+                    visible: true,
+                    opacity: 1.0,
+                    undoStack: [],
+                    redoStack: []
+                };
+            }
+            
+            // Add to top of stack (rendered last, appears on top)
+            // Or add above current layer? For simplicity, add to top.
+            frame.layers.push(newLayer); 
+            if (selectNewLayer || frame.layers.length === 1) {
+                currentLayerIndex = frame.layers.length - 1;
+            }
+            
+            updateAllUI();
+            if (selectNewLayer || frame.layers.length === 1) loadLayer(currentLayerIndex);
+            else renderCurrentFrame(); // if not selecting, just re-render
+        }
+
+        function deleteCurrentLayer() {
+            if (currentFrameIndex < 0 || currentLayerIndex < 0) return;
+            const frame = frames[currentFrameIndex];
+            if (frame.layers.length <= 1) {
+                alert("Cannot delete the last layer of a frame.");
+                return;
+            }
+            frame.layers.splice(currentLayerIndex, 1);
+            currentLayerIndex = Math.max(0, currentLayerIndex - 1);
+            if (frame.layers.length === 0) currentLayerIndex = -1;
+
+            updateAllUI();
+            if (currentLayerIndex >= 0) loadLayer(currentLayerIndex);
+            else renderCurrentFrame();
+        }
+        
+        function moveCurrentLayer(direction) { // -1 for up, 1 for down
+            if (currentFrameIndex < 0 || currentLayerIndex < 0) return;
+            const frame = frames[currentFrameIndex];
+            const newIndex = currentLayerIndex + direction;
+
+            if (newIndex < 0 || newIndex >= frame.layers.length) return;
+
+            const layerToMove = frame.layers.splice(currentLayerIndex, 1)[0];
+            frame.layers.splice(newIndex, 0, layerToMove);
+            currentLayerIndex = newIndex;
+            
+            updateAllUI();
+            renderCurrentFrame();
+        }
+
+
+        function loadLayer(index) {
+            if (currentFrameIndex < 0) return;
+            const frame = frames[currentFrameIndex];
+            if (index < 0 || index >= frame.layers.length) return;
+            
+            currentLayerIndex = index;
+            updateAllUI(); // Update lists (highlights) and buttons
+            renderCurrentFrame(); // Re-render canvas with new active layer potentially affecting previews/info
+        }
+
+        function updateLayersList() {
+            layersListUI.innerHTML = '';
+            if (currentFrameIndex < 0 || !frames[currentFrameIndex]) {
+                 updateToolButtonsStates(); updateCurrentInfo(); return;
+            }
+
+            const frame = frames[currentFrameIndex];
+            frame.layers.forEach((layer, index) => {
+                const listItem = document.createElement('li');
+                listItem.dataset.index = index;
+                if (index === currentLayerIndex) listItem.classList.add('active-item');
+
+                const previewImg = document.createElement('img');
+                previewImg.classList.add('item-preview');
+                layer.previewUrl = generateLayerPreview(layer.data);
+                previewImg.src = layer.previewUrl;
+
+                const layerNameSpan = document.createElement('span');
+                layerNameSpan.classList.add('item-name');
+                layerNameSpan.textContent = layer.name;
+                layerNameSpan.title = layer.name;
+                layerNameSpan.ondblclick = () => {
+                    const newName = prompt("Enter new layer name:", layer.name);
+                    if (newName) {
+                        layer.name = newName;
+                        updateLayersList(); // Redraw list with new name
+                    }
+                };
+                
+                const layerActions = document.createElement('div');
+                layerActions.classList.add('item-actions');
+
+                const visibilityBtn = document.createElement('button');
+                visibilityBtn.textContent = layer.visible ? '👁️' : '🙈';
+                visibilityBtn.classList.add('visibility-toggle');
+                if (!layer.visible) visibilityBtn.classList.add('hidden');
+                visibilityBtn.title = layer.visible ? "Hide Layer" : "Show Layer";
+                visibilityBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    layer.visible = !layer.visible;
+                    renderCurrentFrame();
+                    updateLayersList(); // Update button icon
+                };
+
+                const opacitySlider = document.createElement('input');
+                opacitySlider.type = 'range';
+                opacitySlider.min = 0; max = 1; step = 0.05;
+                opacitySlider.value = layer.opacity;
+                opacitySlider.title = `Opacity: ${Math.round(layer.opacity*100)}%`;
+                opacitySlider.classList.add('layer-opacity-slider');
+                opacitySlider.oninput = (e) => {
+                    e.stopPropagation();
+                    layer.opacity = parseFloat(e.target.value);
+                    opacitySlider.title = `Opacity: ${Math.round(layer.opacity*100)}%`;
+                    if (!isDrawing && !isPlaying) renderCurrentFrame(); // Avoid re-render during performance sensitive ops
+                };
+                 opacitySlider.onchange = (e) => { // Ensure final render on change
+                     e.stopPropagation();
+                     layer.opacity = parseFloat(e.target.value);
+                     renderCurrentFrame();
+                 };
+
+
+                layerActions.appendChild(opacitySlider);
+                layerActions.appendChild(visibilityBtn);
+
+                listItem.appendChild(previewImg);
+                listItem.appendChild(layerNameSpan);
+                listItem.appendChild(layerActions);
+                listItem.addEventListener('click', () => loadLayer(index));
+                layersListUI.appendChild(listItem);
+            });
+            updateToolButtonsStates();
+            updateCurrentInfo();
+        }
+        
+        function generateLayerPreview(layerData) {
             const previewCanvas = document.createElement('canvas');
-            previewCanvas.width = gridWidth; // Draw at 1x1 pixel scale for preview
-            previewCanvas.height = gridHeight;
+            previewCanvas.width = gridWidth; previewCanvas.height = gridHeight;
             const previewCtx = previewCanvas.getContext('2d');
-            previewCtx.fillStyle = '#FFFFFF'; // Background for transparency
+            previewCtx.fillStyle = 'rgba(255,255,255,0.3)'; // Semi-transparent white background for preview
             previewCtx.fillRect(0,0, gridWidth, gridHeight);
 
-            Object.entries(frameData).forEach(([key, color]) => {
+            Object.entries(layerData).forEach(([key, color]) => {
                 const [x, y] = key.split(',').map(Number);
                 previewCtx.fillStyle = color;
                 previewCtx.fillRect(x, y, 1, 1);
@@ -1052,293 +1561,353 @@
             return previewCanvas.toDataURL();
         }
 
-        function renderCurrentFrame() {
-            clearCanvas();
-            if (currentFrameIndex < 0 || !frames[currentFrameIndex]) return;
-
-            const frameData = frames[currentFrameIndex].data;
-            Object.entries(frameData).forEach(([key, color]) => {
-                const [x, y] = key.split(',').map(Number);
-                ctx.fillStyle = color;
-                ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-            });
-            drawGrid();
-            drawOnionSkin();
-
-            // Update preview for current frame
-            if (frames[currentFrameIndex]) {
-                frames[currentFrameIndex].previewUrl = generateFramePreview(frameData);
-                const activeLi = framesListUI.querySelector(`li[data-index="${currentFrameIndex}"] .frame-preview`);
-                if (activeLi) activeLi.src = frames[currentFrameIndex].previewUrl;
-            }
-        }
-
-        function loadFrame(index) {
-            if (index < 0 || index >= frames.length) return;
-            currentFrameIndex = index;
+        function clearCurrentLayerData() {
+            if (currentFrameIndex < 0 || currentLayerIndex < 0) return;
+            const layer = frames[currentFrameIndex].layers[currentLayerIndex];
+            if (!layer) return;
+            if (Object.keys(layer.data).length > 0) recordUndoState(); // Only record if there's something to clear
+            layer.data = {};
             renderCurrentFrame();
-            updateFramesList(); // To highlight active frame
         }
 
-        // --- Animation ---
+        function fillCurrentLayerWithColor() {
+            if (currentFrameIndex < 0 || currentLayerIndex < 0) return;
+            const layer = frames[currentFrameIndex].layers[currentLayerIndex];
+            if (!layer) return;
+            
+            recordUndoState();
+            const newData = {};
+            for (let y = 0; y < gridHeight; y++) {
+                for (let x = 0; x < gridWidth; x++) {
+                    newData[`${x},${y}`] = currentColor;
+                }
+            }
+            layer.data = newData;
+            renderCurrentFrame();
+        }
+
+        // --- Animation Playback & Onion Skinning ---
         function playAnimation() {
             if (frames.length < 1) return;
             if (isPlaying) {
                 clearInterval(animationInterval);
                 isPlaying = false;
                 playAnimationBtn.textContent = 'Play';
+                renderCurrentFrame(); // Restore onion skin if it was disabled during play
                 return;
             }
 
             isPlaying = true;
             playAnimationBtn.textContent = 'Pause';
-            let frameIdxToPlay = currentFrameIndex >=0 ? currentFrameIndex : 0; // Start from current or 0
+            let frameIdxToPlay = currentFrameIndex >= 0 ? currentFrameIndex : 0;
 
             const delay = 1000 / parseInt(fpsInput.value);
             animationInterval = setInterval(() => {
-                loadFrame(frameIdxToPlay);
+                loadFrame(frameIdxToPlay); // This also loads layer & renders
                 frameIdxToPlay = (frameIdxToPlay + 1) % frames.length;
             }, delay);
         }
 
-        fpsInput.addEventListener('change', () => {
-            if (isPlaying) { // If playing, restart with new FPS
-                playAnimation(); // Stop
-                playAnimation(); // Start
-            }
-        });
-
-        // --- Onion Skinning ---
         function drawOnionSkin() {
-            onionCtx.clearRect(0, 0, onionSkinCanvas.width, onionSkinCanvas.height);
-            if (!onionSkinToggle.checked || currentFrameIndex < 0) return;
+            clearCanvas(onionCtx);
+            if (!onionSkinToggle.checked || currentFrameIndex < 0 || isPlaying) return;
 
-            const mode = onionSkinModeSelect.value;
+            const numPrev = parseInt(onionPrevFramesInput.value);
+            const numNext = parseInt(onionNextFramesInput.value);
+            const prevColor = onionPrevColorInput.value;
+            const nextColor = onionNextColorInput.value;
+            
+            onionCtx.globalAlpha = 0.3; // Base opacity for onion skin layers
 
-            const drawFrameOnOnion = (frameIndex, color) => {
-                if (frameIndex < 0 || frameIndex >= frames.length) return;
-                const frameData = frames[frameIndex].data;
-                 onionCtx.fillStyle = color; // Use a fixed color for onion skin for clarity
-                Object.entries(frameData).forEach(([key, pixelColor]) => {
-                    const [x, y] = key.split(',').map(Number);
-                    // Could try to use actual color with alpha, but fixed color might be clearer
-                    // onionCtx.fillStyle = pixelColor; // If using original color
-                    onionCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+            // Draw previous frames
+            for (let i = 1; i <= numPrev; i++) {
+                const frameIdx = currentFrameIndex - i;
+                if (frameIdx < 0) break;
+                const frame = frames[frameIdx];
+                if (!frame) continue;
+                
+                // Composite layers for this onion skin frame
+                frame.layers.forEach(layer => {
+                    if(layer.visible) {
+                        // Could adjust opacity based on distance, i.e., (numPrev - i + 1) / numPrev * baseOpacity
+                        // onionCtx.globalAlpha = ((numPrev - i + 1) / numPrev) * 0.4; // Fades further frames
+                        // For simplicity, use fixed opacity but distinct color
+                        Object.entries(layer.data).forEach(([key, pixelColor]) => {
+                            const [x,y] = key.split(',').map(Number);
+                            onionCtx.fillStyle = prevColor; // Use specified prev color
+                            onionCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+                        });
+                    }
                 });
-            };
+            }
 
-            if (mode === 'prev' || mode === 'both') {
-                if (currentFrameIndex > 0) {
-                    drawFrameOnOnion(currentFrameIndex - 1, "rgba(0, 0, 255, 0.5)"); // Blue for previous
-                }
+            // Draw next frames
+            for (let i = 1; i <= numNext; i++) {
+                const frameIdx = currentFrameIndex + i;
+                if (frameIdx >= frames.length) break;
+                const frame = frames[frameIdx];
+                if (!frame) continue;
+
+                frame.layers.forEach(layer => {
+                    if(layer.visible) {
+                        Object.entries(layer.data).forEach(([key, pixelColor]) => {
+                            const [x,y] = key.split(',').map(Number);
+                            onionCtx.fillStyle = nextColor; // Use specified next color
+                            onionCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+                        });
+                    }
+                });
             }
-            if (mode === 'next' || mode === 'both') {
-                 if (currentFrameIndex < frames.length - 1) {
-                    drawFrameOnOnion(currentFrameIndex + 1, "rgba(255, 0, 0, 0.5)"); // Red for next
-                }
-            }
+            onionCtx.globalAlpha = 1.0; // Reset
         }
-        [onionSkinToggle, onionSkinModeSelect].forEach(el => el.addEventListener('change', renderCurrentFrame));
 
 
-        // --- Template Loading ---
-        const templates = {
-            human_stick: [ // Array of {x,y,c} where c is color (optional, default black)
-                // Head
+        // --- Templates ---
+        const staticTemplates = { // These draw on the current layer of the current frame
+             human_stick: [ 
                 {x:15, y:5}, {x:16, y:5}, {x:14,y:6}, {x:17,y:6}, {x:14,y:7}, {x:17,y:7}, {x:15,y:8}, {x:16,y:8},
-                // Body
                 {x:15, y:9}, {x:16, y:9}, {x:15, y:10}, {x:16, y:10}, {x:15, y:11}, {x:16, y:11}, {x:15, y:12}, {x:16, y:12}, {x:15, y:13}, {x:16, y:13},
-                // Arms
                 {x:13, y:10}, {x:14, y:10}, {x:12, y:11}, {x:17, y:10}, {x:18, y:10}, {x:19, y:11},
-                // Legs
                 {x:14, y:14}, {x:14, y:15}, {x:13, y:16}, {x:13, y:17}, {x:17,y:14}, {x:17,y:15}, {x:18,y:16}, {x:18,y:17}
             ],
             quad_stick: [
-                // Head
-                {x:5,y:10},{x:6,y:10},{x:4,y:11},{x:7,y:11},{x:5,y:12},{x:6,y:12},
-                // Neck & Body
-                {x:7,y:12},{x:8,y:13},{x:9,y:13},{x:10,y:13},{x:11,y:13},{x:12,y:13},{x:13,y:13},{x:14,y:13},{x:15,y:13},
-                // Front Legs
-                {x:9,y:14},{x:9,y:15},{x:9,y:16},{x:10,y:14},{x:10,y:15},{x:10,y:16},
-                // Back Legs
-                {x:14,y:14},{x:14,y:15},{x:14,y:16},{x:15,y:14},{x:15,y:15},{x:15,y:16},
-                // Tail
-                {x:16,y:12},{x:17,y:11}
+                {x:5,y:10},{x:6,y:10},{x:4,y:11},{x:7,y:11},{x:5,y:12},{x:6,y:12}, {x:7,y:12},{x:8,y:13},{x:9,y:13},{x:10,y:13},{x:11,y:13},{x:12,y:13},{x:13,y:13},{x:14,y:13},{x:15,y:13},
+                {x:9,y:14},{x:9,y:15},{x:9,y:16},{x:10,y:14},{x:10,y:15},{x:10,y:16}, {x:14,y:14},{x:14,y:15},{x:14,y:16},{x:15,y:14},{x:15,y:15},{x:15,y:16}, {x:16,y:12},{x:17,y:11}
             ],
-            simple_face: [ // Centered in a 32x32 grid
-                // Outline
+            simple_face: [ 
                 {x:10,y:10},{x:11,y:10},{x:12,y:10},{x:13,y:10},{x:14,y:10},{x:15,y:10},{x:16,y:10},{x:17,y:10},{x:18,y:10},{x:19,y:10},{x:20,y:10},{x:21,y:10},
                 {x:9,y:11},{x:22,y:11}, {x:9,y:12},{x:22,y:12}, {x:8,y:13},{x:23,y:13}, {x:8,y:14},{x:23,y:14}, {x:8,y:15},{x:23,y:15}, {x:8,y:16},{x:23,y:16},
                 {x:8,y:17},{x:23,y:17}, {x:8,y:18},{x:23,y:18}, {x:9,y:19},{x:22,y:19}, {x:9,y:20},{x:22,y:20},
                 {x:10,y:21},{x:11,y:21},{x:12,y:21},{x:13,y:21},{x:14,y:21},{x:15,y:21},{x:16,y:21},{x:17,y:21},{x:18,y:21},{x:19,y:21},{x:20,y:21},{x:21,y:21},
-                // Eyes
-                {x:12,y:14,c:'#0000FF'},{x:13,y:14,c:'#0000FF'}, {x:18,y:14,c:'#0000FF'},{x:19,y:14,c:'#0000FF'},
-                // Mouth
-                {x:14,y:18,c:'#FF0000'},{x:15,y:19,c:'#FF0000'},{x:16,y:19,c:'#FF0000'},{x:17,y:18,c:'#FF0000'}
+                {x:12,y:14,c:'#00F'},{x:13,y:14,c:'#00F'}, {x:18,y:14,c:'#00F'},{x:19,y:14,c:'#00F'}, {x:14,y:18,c:'#F00'},{x:15,y:19,c:'#F00'},{x:16,y:19,c:'#F00'},{x:17,y:18,c:'#F00'}
+            ]
+        };
+        const animationTemplates = { // These add new frames
+            walk_cycle_4frame: [ // Array of layer data objects, each for a new frame
+                // Frame 1 (Contact)
+                { data: {"15,10":"#000","16,10":"#000","15,11":"#000","16,11":"#000","15,12":"#000","16,12":"#000","15,13":"#000","16,13":"#000","15,14":"#000","16,14":"#000","14,11":"#000","13,12":"#000","17,11":"#000","18,12":"#000","14,15":"#000","13,16":"#000","17,15":"#000","18,16":"#000","15,8":"#AAA","16,8":"#AAA","15,9":"#AAA","16,9":"#AAA"}},
+                // Frame 2 (Down/Recoil)
+                { data: {"15,11":"#000","16,11":"#000","15,12":"#000","16,12":"#000","15,13":"#000","16,13":"#000","15,14":"#000","16,14":"#000","15,15":"#000","16,15":"#000","14,12":"#000","13,13":"#000","17,12":"#000","18,13":"#000","15,16":"#000","14,17":"#000","16,16":"#000","17,17":"#000","15,9":"#AAA","16,9":"#AAA","15,10":"#AAA","16,10":"#AAA"}},
+                // Frame 3 (Passing)
+                { data: {"15,10":"#000","16,10":"#000","15,11":"#000","16,11":"#000","15,12":"#000","16,12":"#000","15,13":"#000","16,13":"#000","15,14":"#000","16,14":"#000","14,11":"#000","17,11":"#000","18,10":"#000","15,15":"#000","15,16":"#000","16,15":"#000","14,14":"#000","13,13":"#000","15,8":"#AAA","16,8":"#AAA","15,9":"#AAA","16,9":"#AAA"}},
+                // Frame 4 (Up/Push-off)
+                { data: {"15,9":"#000","16,9":"#000","15,10":"#000","16,10":"#000","15,11":"#000","16,11":"#000","15,12":"#000","16,12":"#000","15,13":"#000","16,13":"#000","14,10":"#000","13,9":"#000","17,10":"#000","18,9":"#000","16,14":"#000","17,15":"#000","14,14":"#000","13,15":"#000","15,7":"#AAA","16,7":"#AAA","15,8":"#AAA","16,8":"#AAA"}},
             ]
         };
 
-        loadTemplateBtn.addEventListener('click', () => {
+        function applySelectedTemplate() {
             const templateName = templateSelector.value;
-            if (!templateName || !templates[templateName] || currentFrameIndex < 0) return;
+            if (!templateName) return;
 
-            const templatePixels = templates[templateName];
-            const frameData = frames[currentFrameIndex].data;
-            // Optional: Clear frame before loading template? For now, it overlays.
-            // frames[currentFrameIndex].data = {}; // Uncomment to clear
-            templatePixels.forEach(p => {
-                const color = p.c || '#808080'; // Default guide color to gray
-                 if (p.x >= 0 && p.x < gridWidth && p.y >= 0 && p.y < gridHeight) {
-                    frameData[`${p.x},${p.y}`] = color;
+            if (staticTemplates[templateName]) {
+                if (currentFrameIndex < 0 || currentLayerIndex < 0) {
+                    alert("Please select a frame and layer first.");
+                    return;
                 }
-            });
-            renderCurrentFrame();
-        });
+                const layer = frames[currentFrameIndex].layers[currentLayerIndex];
+                if(!layer) return;
 
+                recordUndoState(); // Record before applying template
+                const templatePixels = staticTemplates[templateName];
+                templatePixels.forEach(p => {
+                    const color = p.c || '#808080'; // Default guide color
+                    if (p.x >= 0 && p.x < gridWidth && p.y >= 0 && p.y < gridHeight) {
+                        layer.data[`${p.x},${p.y}`] = color;
+                    }
+                });
+                renderCurrentFrame();
 
-        // --- Other Controls ---
-        resizeCanvasBtn.addEventListener('click', () => {
-            const newGridW = parseInt(gridWidthInput.value);
-            const newGridH = parseInt(gridHeightInput.value);
-            const newPixelSize = parseInt(pixelSizeInput.value);
+            } else if (animationTemplates[templateName]) {
+                const templateFrameDataArray = animationTemplates[templateName];
+                let insertAtIndex = currentFrameIndex >= 0 ? currentFrameIndex : frames.length -1;
 
-            // Optional: Add logic to scale/crop existing drawing data if grid size changes.
-            // For simplicity, this will clear and resize. A more "pro" tool would offer options.
-            // To preserve data, you'd iterate over old frames and map pixels to new grid.
-
-            gridWidth = newGridW;
-            gridHeight = newGridH;
-            pixelSize = newPixelSize;
-
-            setupCanvas();
-
-            // Re-initialize frames with new dimensions (clears them)
-            // A more advanced version would try to preserve/scale content
-            const oldFramesCount = frames.length;
-            frames = [];
-            currentFrameIndex = -1;
-            for(let i=0; i<oldFramesCount; i++) {
-                addFrame(); // Adds empty frames with new dimensions
+                templateFrameDataArray.forEach(frameLayerData => {
+                     addNewFrame(null, insertAtIndex); // Add new empty frame after current (or at end)
+                     insertAtIndex = currentFrameIndex; // Update for next frame insertion
+                     
+                     // The new frame created by addNewFrame already has a default layer.
+                     // We want to replace its data or add this as a new layer.
+                     // For simplicity, let's assume the template data goes into the first layer of the new frame.
+                     const newFrame = frames[currentFrameIndex];
+                     if (newFrame.layers.length > 0) {
+                         // Overwrite data of the first layer
+                         newFrame.layers[0].data = JSON.parse(JSON.stringify(frameLayerData.data || {})); // Deep copy
+                         newFrame.layers[0].name = templateName + " Layer";
+                     } else { // Should not happen if addNewFrame ensures a layer
+                         addNewLayer(false); // Add a layer if somehow missing
+                         newFrame.layers[0].data = JSON.parse(JSON.stringify(frameLayerData.data || {}));
+                         newFrame.layers[0].name = templateName + " Layer";
+                     }
+                });
+                // After adding all frames from template, load the first one created by the template
+                if (templateFrameDataArray.length > 0) {
+                    loadFrame( (insertAtIndex - templateFrameDataArray.length + 1 + frames.length) % frames.length ); // Cycle to first new frame
+                }
+                updateAllUI();
             }
-            if (oldFramesCount > 0) {
-                 loadFrame(0);
-            } else {
-                clearCanvas();
-                drawGrid();
-            }
-        });
+        }
 
-        gridToggle.addEventListener('change', renderCurrentFrame);
-        colorPicker.addEventListener('input', (e) => {
-            currentColor = e.target.value;
-            // Deselect any palette swatch if custom color picked
-            document.querySelectorAll('.color-swatch.selected').forEach(s => s.classList.remove('selected'));
-        });
-
-        // --- Export GIF ---
-        exportGifBtn.addEventListener('click', () => {
-            if (frames.length === 0) {
-                alert("No frames to export!");
-                return;
-            }
+        // --- Exporting ---
+        function exportTo(format) {
+            if (frames.length === 0) { alert("No frames to export!"); return; }
             if (isPlaying) playAnimation(); // Stop animation
 
-            const encoder = new GIFEncoder();
-            encoder.setRepeat(0); // 0 for loop indefinitely, -1 for no loop
-            encoder.setDelay(1000 / parseInt(fpsInput.value));
-            encoder.start();
-
-            // Create a temporary canvas for rendering each frame at 1x1 pixel scale
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = gridWidth;
-            tempCanvas.height = gridHeight;
-            const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true }); // for getImageData
-            tempCtx.imageSmoothingEnabled = false;
-
-            // Define a fixed palette. GIF standard supports up to 256 colors.
-            // For simplicity, we'll use the defaultPalette + transparent.
-            // A more advanced solution would involve color quantization.
-            const gifPalette = [];
-            defaultPalette.forEach(hex => {
-                const r = parseInt(hex.substring(1, 3), 16);
-                const g = parseInt(hex.substring(3, 5), 16);
-                const b = parseInt(hex.substring(5, 7), 16);
-                gifPalette.push(r, g, b);
-            });
-
-            // Pad palette to 256 colors (768 bytes) if needed
-            const currentPaletteSize = gifPalette.length / 3;
-            for (let i = currentPaletteSize; i < 256; i++) {
-                gifPalette.push(0, 0, 0); // Fill with black
-            }
-            encoder.colorTab = new Uint8Array(gifPalette); // Set the color table
-
-            // Set transparent color. For simplicity, let's assume the first color in palette (black if default)
-            // could be treated as transparent if needed, or find a specific transparent color.
-            // For this example, we will use a very specific color for transparency that's unlikely to be used.
-            // Or, better, try to find an unused color slot for true transparency if possible.
-            // The GIFEncoder provided has basic transparent color handling.
-            // Let's use a common method: map an unused color index to transparent.
-            // If all 256 colors are used, this becomes tricky.
-            // For this simplified version, we'll pick an index (e.g., last one) and make it transparent if needed.
-            // The jsgif encoder handles this by finding closest color for transparency.
-            // We can set a transparent color like white (255,255,255) for the GIF background.
-            // If your art uses white, pick another color. This is a common GIF limitation.
-            // For pixel art, explicit transparent pixels are better.
-            // Let's make index 0 (#000000) transparent for this example.
-            // encoder.setTransparent(0x000000); // This tells it what RGB to make transparent.
-            // OR, better, have a specific "transparent" color in our data, and map that to an index.
-            // The current GIFEncoder logic will try to find the best match for transparent.
-            // We'll use null, and it will try to pick based on used colors.
-            // Better: add a specific transparent color to our palette for GIF
-            // Let's say our "transparent" is #010101 (very dark gray, unlikely to be used for drawing)
-            // and map that to transparent in GIF.
-            // The provided GIFEncoder is not super flexible with manual palette + transparency.
-            // It's often easier to let it quantize or use a full NeuQuant.js.
-            // Given the embedded encoder:
-            // We define the transparent color as white (0xFFFFFF) to make canvas background transparent
-            // This means if you draw with pure white, it will also be transparent in the GIF.
-            encoder.setTransparent(0xFFFFFF); // RGB value for white
-
-
-            frames.forEach(frame => {
-                // Draw frame data onto tempCanvas
-                tempCtx.fillStyle = '#FFFFFF'; // GIF background color (will be transparent)
-                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-
-                Object.entries(frame.data).forEach(([key, color]) => {
-                    const [x, y] = key.split(',').map(Number);
-                    tempCtx.fillStyle = color;
-                    tempCtx.fillRect(x, y, 1, 1); // Draw 1x1 pixel
+            const tempRenderCanvas = document.createElement('canvas');
+            tempRenderCanvas.width = gridWidth; tempRenderCanvas.height = gridHeight;
+            const tempRenderCtx = tempRenderCanvas.getContext('2d', { willReadFrequently: true });
+            tempRenderCtx.imageSmoothingEnabled = false;
+            
+            // Common rendering function for a single frame to the temp canvas
+            const renderFrameToTempCanvas = (frameIndex) => {
+                tempRenderCtx.fillStyle = '#FFFFFF'; // GIF background for transparency handling
+                tempRenderCtx.fillRect(0, 0, tempRenderCanvas.width, tempRenderCanvas.height);
+                const frameToRender = frames[frameIndex];
+                frameToRender.layers.forEach(layer => {
+                    if (layer.visible) {
+                        tempRenderCtx.globalAlpha = layer.opacity;
+                        Object.entries(layer.data).forEach(([key, color]) => {
+                            const [gx, gy] = key.split(',').map(Number);
+                            tempRenderCtx.fillStyle = color;
+                            tempRenderCtx.fillRect(gx, gy, 1, 1);
+                        });
+                    }
                 });
-                encoder.addFrame(tempCtx);
-            });
+                tempRenderCtx.globalAlpha = 1.0;
+            };
 
-            encoder.finish();
-            const gifData = encoder.getResults();
-            const blob = new Blob([gifData], {type: 'image/gif'});
-            const url = URL.createObjectURL(blob);
+            if (format === 'gif') {
+                const encoder = new GIFEncoder();
+                encoder.setRepeat(0); // Loop indefinitely
+                encoder.setDelay(1000 / parseInt(fpsInput.value));
+                encoder.setTransparent(0xFFFFFF); // Make white pixels transparent in GIF
+                // Consider a better palette generation/quantization for real "pro" export.
+                // For now, using default palette behavior of GIFEncoder.js
+                // You can manually construct and set `encoder.colorTab` if needed.
+                encoder.start();
 
-            document.getElementById('gifPreviewImage').src = url;
-            document.getElementById('gifPreviewModal').style.display = 'flex';
-
-            // Optional: Auto-download
-            // const a = document.createElement('a');
-            // a.href = url;
-            // a.download = 'pixel-animation.gif';
-            // document.body.appendChild(a);
-            // a.click();
-            // document.body.removeChild(a);
-            // URL.revokeObjectURL(url); // Clean up
-        });
+                frames.forEach((frame, index) => {
+                    renderFrameToTempCanvas(index);
+                    encoder.addFrame(tempRenderCtx);
+                });
+                encoder.finish();
+                const gifData = encoder.getResults();
+                const blob = new Blob([gifData], {type: 'image/gif'});
+                const url = URL.createObjectURL(blob);
+                outputPreviewImage.src = url;
+                gifPreviewModal.style.display = 'flex';
+            } else if (format === 'png') {
+                if (currentFrameIndex < 0) { alert("Select a frame to export as PNG."); return; }
+                renderFrameToTempCanvas(currentFrameIndex);
+                const pngUrl = tempRenderCanvas.toDataURL('image/png');
+                outputPreviewImage.src = pngUrl;
+                gifPreviewModal.style.display = 'flex';
+            }
+        }
+        
+        // --- Utility ---
+        function rgbToHex(rgb) {
+            if (!rgb || !rgb.startsWith('rgb')) return rgb; // If already hex or not rgb string
+            const result = rgb.match(/\d+/g);
+            if (!result || result.length < 3) return rgb;
+            return "#" + result.map(x => {
+                const hex = parseInt(x).toString(16);
+                return hex.length === 1 ? "0" + hex : hex;
+            }).join('');
+        }
 
         // --- Event Listeners Setup ---
         function setupEventListeners() {
-            addFrameBtn.addEventListener('click', () => addFrame(null)); // Add new empty frame
-            duplicateFrameBtn.addEventListener('click', duplicateFrame);
-            playAnimationBtn.addEventListener('click', playAnimation);
-        }
+            resizeCanvasBtn.addEventListener('click', () => {
+                parseInputs();
+                setupCanvases(); // Will re-render
+                // Note: This doesn't scale existing art. That's a more complex feature.
+                // It effectively resets the canvas dimensions for new art.
+                // To preserve, one would need to iterate over all frames/layers and remap pixel data.
+            });
+            gridToggle.addEventListener('change', renderCurrentFrame);
+            centerCanvasToggle.addEventListener('change', renderCurrentFrame); // May need more complex logic for centering
+            colorPicker.addEventListener('input', (e) => {
+                currentColor = e.target.value;
+                document.querySelectorAll('.color-swatch.selected').forEach(s => s.classList.remove('selected'));
+            });
 
+            // Tools
+            toolBtns.forEach(btn => btn.addEventListener('click', () => setCurrentTool(btn.id.replace('Tool',''))));
+            symBtns.forEach(btn => btn.addEventListener('click', () => {
+                currentSymmetry = btn.id.replace('sym','').toLowerCase() || 'none';
+                if(currentSymmetry === "none") currentSymmetry = "none"; // ensure 'none' if empty
+                symBtns.forEach(b => b.classList.toggle('active', b.id === btn.id));
+            }));
+            
+            // Selection Actions
+            moveSelectionBtn.addEventListener('click', () => {
+                if (!selectionRect || currentTool !== 'selection') return;
+                 // Prepare to move. Click on canvas will then drag.
+                 // This is a bit clunky. Better: mousedown on selected area when tool is 'selection' starts move.
+                 // For now, this button enables the "moving" state for the next mousedown.
+                 // This is complex. Let's change: clicking "Move" grabs the selection immediately.
+                 // The user then moves mouse and clicks again to drop.
+                 // Let's simplify: "Move" button is not needed if direct drag is implemented.
+                 // If we keep the button: it toggles a "isPreparingToMove" state.
+                 // Then mousedown on canvas (if inside selection) starts the actual move.
+                 // For now, let's make MoveSelectionBtn just start the move if a selection exists.
+                 // This feels like a user will click it, then expect to drag.
+                 // The current mousedown already handles starting move if inside a selection.
+                 // So this button is more like "Grab Selection" then you can drag with mouse.
+                 // Let's make it so that if you are in selection tool and selectionRect exists,
+                 // mousedown inside selectionRect initiates the move logic.
+                 // The `moveSelectionBtn` can be removed if direct drag is preferred.
+                 // For now, I'll assume direct dragging:
+                 // If in 'selection' tool and `selectionRect` exists, mousedown inside it starts move.
+                 // So `moveSelectionBtn` may not be needed if flow is: select tool -> draw rect -> click inside rect to drag.
+                 // If `moveSelectionBtn` IS used, it should make `isMovingSelection = true` and copy data.
+                 if (selectionRect && !isMovingSelection) {
+                     // Simulate the start of a move using the center of the selection as the "grab point"
+                     startMoveSelection(selectionRect.x + Math.floor(selectionRect.w / 2), selectionRect.y + Math.floor(selectionRect.h / 2));
+                 }
+
+            });
+            deselectBtn.addEventListener('click', deselect);
+
+
+            // Edit
+            undoBtn.addEventListener('click', undo);
+            redoBtn.addEventListener('click', redo);
+            clearLayerBtn.addEventListener('click', clearCurrentLayerData);
+            fillLayerBtn.addEventListener('click', fillCurrentLayerWithColor);
+
+            // Layers
+            addLayerBtn.addEventListener('click', () => addNewLayer(true));
+            deleteLayerBtn.addEventListener('click', deleteCurrentLayer);
+            moveLayerUpBtn.addEventListener('click', () => moveCurrentLayer(-1));
+            moveLayerDownBtn.addEventListener('click', () => moveCurrentLayer(1));
+
+            // Frames
+            addFrameBtn.addEventListener('click', () => addNewFrame(null, currentFrameIndex));
+            duplicateFrameBtn.addEventListener('click', duplicateCurrentFrame);
+            deleteFrameBtn.addEventListener('click', deleteCurrentFrame);
+
+            // Animation
+            playAnimationBtn.addEventListener('click', playAnimation);
+            fpsInput.addEventListener('change', () => {
+                if (isPlaying) { playAnimation(); playAnimation(); } // Stop and restart
+            });
+            [onionSkinToggle, onionPrevFramesInput, onionNextFramesInput, onionPrevColorInput, onionNextColorInput].forEach(el => {
+                el.addEventListener('change', renderCurrentFrame);
+            });
+
+            // Templates
+            loadTemplateBtn.addEventListener('click', applySelectedTemplate);
+
+            // Export
+            exportGifBtn.addEventListener('click', () => exportTo('gif'));
+            exportPngBtn.addEventListener('click', () => exportTo('png'));
+
+            // Window resize for responsive canvas wrapper
+            // window.addEventListener('resize', setupCanvases); // Can be intensive.
+            // A better approach for canvas scaling on resize might be CSS transforms or adjusting pixelSize.
+            // For now, manual Apply Size is the primary way to change canvas display.
+        }
 
         // --- Start the app ---
         init();
