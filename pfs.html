@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Simple 3D FPS</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; color: white; font-family: Arial, sans-serif; }
+        canvas { display: block; }
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px;
+            height: 10px;
+            border: 1px solid white;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            pointer-events: none; /* Important so it doesn't interfere with mouse clicks on canvas */
+        }
+        .joystick-area {
+            position: absolute;
+            bottom: 20px;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background-color: rgba(128, 128, 128, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none; /* Prevent text selection */
+            -webkit-user-select: none;
+        }
+        .joystick-handle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: rgba(200, 200, 200, 0.6);
+        }
+        #joystick-left { left: 20px; }
+        #joystick-right { right: 20px; }
+        #shoot-button-mobile {
+            position: absolute;
+            bottom: 180px; /* Above right joystick */
+            right: 50px;
+            width: 80px;
+            height: 80px;
+            background-color: rgba(255, 0, 0, 0.5);
+            color: white;
+            border: 2px solid white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+            user-select: none;
+            -webkit-user-select: none;
+            display: none; /* Hidden by default, shown for touch devices */
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #player-health {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            color: lightgreen;
+            text-shadow: 1px 1px 2px black;
+        }
+    </style>
+</head>
+<body>
+    <div id="crosshair">+</div>
+    <div id="info">
+        PC: WASD to Move, SPACE to Jump, X or Click to Shoot, MOUSE to Look<br>
+        Mobile: Joysticks (visual stubs) & Shoot Button (basic functionality)
+    </div>
+    <div id="player-health">Health: 100</div>
+
+    <!-- Mobile Controls -->
+    <div id="joystick-left" class="joystick-area">
+        <div class="joystick-handle"></div>
+    </div>
+    <div id="joystick-right" class="joystick-area">
+        <div class="joystick-handle"></div>
+    </div>
+    <button id="shoot-button-mobile">SHOOT</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        let scene, camera, renderer;
+        let player, playerVelocity = new THREE.Vector3();
+        let playerSpeed = 10.0, jumpHeight = 15.0;
+        let onGround = false;
+        const gravity = new THREE.Vector3(0, -30.0, 0); // Stronger gravity
+        let playerHealth = 100;
+
+        const keys = {
+            w: false, a: false, s: false, d: false,
+            space: false, x: false
+        };
+
+        let collidableObjects = [];
+        let enemies = [];
+        let bullets = [];
+        let enemyBullets = [];
+
+        // Mobile joystick state
+        let moveStick = { x: 0, y: 0, active: false, element: document.getElementById('joystick-left'), handle: document.getElementById('joystick-left').querySelector('.joystick-handle') };
+        let lookStick = { x: 0, y: 0, active: false, element: document.getElementById('joystick-right'), handle: document.getElementById('joystick-right').querySelector('.joystick-handle') };
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87ceeb); // Sky blue
+            scene.fog = new THREE.Fog(0x87ceeb, 0, 150);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.y = 1.8; // Player height
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // Player (represented by the camera group)
+            player = new THREE.Group();
+            player.add(camera);
+            player.position.set(0, 10, 5); // Start on a platform or adjust ground
+            scene.add(player);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 20, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 1024;
+            directionalLight.shadow.mapSize.height = 1024;
+            scene.add(directionalLight);
+
+
+            // Ground
+            const groundGeometry = new THREE.PlaneGeometry(200, 200);
+            const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 }); // Forest green
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            collidableObjects.push(ground); // Ground is collidable for fall detection
+
+            // Simple Map Elements
+            createBox(10, 5, 10, 0x8B4513, 15, 2.5, 0); // House 1
+            createBox(8, 4, 8, 0x8B4513, -15, 2, -10); // House 2
+            createTree(-5, 0, -15);
+            createTree(8, 0, -20);
+            createTree(20, 0, 10);
+
+            // Enemies
+            createEnemy(10, 1, 10, 0xff0000);
+            createEnemy(-10, 1, -5, 0xff0000);
+            createEnemy(0, 1, -20, 0xff0000);
+
+            setupControls();
+            checkTouchDevice();
+
+            animate();
+        }
+
+        function createBox(width, height, depth, color, x, y, z) {
+            const geometry = new THREE.BoxGeometry(width, height, depth);
+            const material = new THREE.MeshStandardMaterial({ color: color });
+            const box = new THREE.Mesh(geometry, material);
+            box.position.set(x, y, z);
+            box.castShadow = true;
+            box.receiveShadow = true;
+            scene.add(box);
+            collidableObjects.push(box);
+            return box;
+        }
+
+        function createTree(x, y, z) {
+            const trunkHeight = 4 + Math.random() * 2;
+            const trunkRadius = 0.3 + Math.random() * 0.2;
+            const trunkGeometry = new THREE.CylinderGeometry(trunkRadius, trunkRadius * 1.2, trunkHeight, 8);
+            const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x5C3317 }); // Brown
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.set(x, y + trunkHeight / 2, z);
+            trunk.castShadow = true;
+            scene.add(trunk);
+            collidableObjects.push(trunk);
+
+            const leavesRadius = 1.5 + Math.random() * 1;
+            const leavesHeight = 3 + Math.random() * 2;
+            const leavesGeometry = new THREE.ConeGeometry(leavesRadius, leavesHeight, 8);
+            const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x006400 }); // Dark Green
+            const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+            leaves.position.set(x, y + trunkHeight + leavesHeight / 2 - 0.5, z);
+            leaves.castShadow = true;
+            scene.add(leaves);
+            // collidableObjects.push(leaves); // Optional: make leaves collidable
+        }
+        
+        function createEnemy(x, y, z, color) {
+            const geometry = new THREE.BoxGeometry(1, 2, 1); // Taller than wide
+            const material = new THREE.MeshStandardMaterial({ color: color });
+            const enemy = new THREE.Mesh(geometry, material);
+            enemy.position.set(x, y, z);
+            enemy.castShadow = true;
+            enemy.userData = { health: 50, shootCooldown: 0, lastShotTime: 0, type: 'enemy' };
+            scene.add(enemy);
+            enemies.push(enemy);
+            collidableObjects.push(enemy); // Enemies are collidable
+        }
+
+        function setupControls() {
+            document.addEventListener('keydown', (event) => keys[event.key.toLowerCase()] = true);
+            document.addEventListener('keyup', (event) => keys[event.key.toLowerCase()] = false);
+
+            document.addEventListener('pointerlockchange', lockChangeAlert, false);
+            document.addEventListener('mozpointerlockchange', lockChangeAlert, false);
+
+            renderer.domElement.addEventListener('click', () => {
+                if (document.pointerLockElement !== renderer.domElement &&
+                    'mozPointerLockElement' !== renderer.domElement) {
+                    renderer.domElement.requestPointerLock = renderer.domElement.requestPointerLock ||
+                                                          renderer.domElement.mozRequestPointerLock;
+                    renderer.domElement.requestPointerLock();
+                } else {
+                     if (keys['x']) return; // Debounce with keyboard X
+                     shoot();
+                }
+            });
+
+            // Mouse look
+            document.addEventListener('mousemove', (event) => {
+                if (document.pointerLockElement === renderer.domElement ||
+                    document.mozPointerLockElement === renderer.domElement) {
+                    player.rotation.y -= event.movementX * 0.002;
+                    camera.rotation.x -= event.movementY * 0.002;
+                    camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
+                }
+            });
+
+            // Mobile joystick controls
+            [moveStick, lookStick].forEach(stick => {
+                stick.element.addEventListener('touchstart', (e) => handleStickStart(e, stick), { passive: false });
+                stick.element.addEventListener('touchmove', (e) => handleStickMove(e, stick), { passive: false });
+                stick.element.addEventListener('touchend', (e) => handleStickEnd(e, stick));
+                stick.element.addEventListener('touchcancel', (e) => handleStickEnd(e, stick));
+            });
+            
+            document.getElementById('shoot-button-mobile').addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                shoot();
+            });
+
+            window.addEventListener('resize', onWindowResize);
+        }
+        
+        function lockChangeAlert() {
+            if (document.pointerLockElement === renderer.domElement ||
+                document.mozPointerLockElement === renderer.domElement) {
+                console.log('Pointer Lock enabled.');
+            } else {
+                console.log('Pointer Lock disabled.');
+            }
+        }
+
+        function checkTouchDevice() {
+            const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+            if (isTouch) {
+                document.getElementById('joystick-left').style.display = 'flex';
+                document.getElementById('joystick-right').style.display = 'flex';
+                document.getElementById('shoot-button-mobile').style.display = 'flex';
+                document.getElementById('info').innerHTML = "Mobile: Use Joysticks to Move/Look & Shoot Button";
+                // For mobile, we won't use pointer lock for simplicity.
+                // Camera look via right joystick.
+            } else {
+                document.getElementById('joystick-left').style.display = 'none';
+                document.getElementById('joystick-right').style.display = 'none';
+                document.getElementById('shoot-button-mobile').style.display = 'none';
+            }
+        }
+
+        function handleStickStart(event, stick) {
+            event.preventDefault();
+            stick.active = true;
+            stick.element.style.backgroundColor = 'rgba(128, 128, 128, 0.5)';
+            updateStickPosition(event.targetTouches[0], stick);
+        }
+
+        function handleStickMove(event, stick) {
+            event.preventDefault();
+            if (!stick.active) return;
+            updateStickPosition(event.targetTouches[0], stick);
+        }
+
+        function handleStickEnd(event, stick) {
+            stick.active = false;
+            stick.x = 0;
+            stick.y = 0;
+            stick.handle.style.transform = `translate(0px, 0px)`;
+            stick.element.style.backgroundColor = 'rgba(128, 128, 128, 0.3)';
+        }
+
+        function updateStickPosition(touch, stick) {
+            const rect = stick.element.getBoundingClientRect();
+            constcenterX = rect.left + rect.width / 2;
+            constcenterY = rect.top + rect.height / 2;
+            
+            let dx = touch.clientX - centerX;
+            let dy = touch.clientY - centerY;
+            
+            const maxDistance = rect.width / 2 - stick.handle.offsetWidth / 2;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > maxDistance) {
+                dx = (dx / distance) * maxDistance;
+                dy = (dy / distance) * maxDistance;
+            }
+            
+            stick.handle.style.transform = `translate(${dx}px, ${dy}px)`;
+            
+            // Normalize to -1 to 1 range
+            stick.x = dx / maxDistance;
+            stick.y = dy / maxDistance; // y is inverted for typical joystick up/down
+        }
+
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function shoot() {
+            if (playerHealth <= 0) return;
+
+            const bulletGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+            const bulletMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+            const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+
+            bullet.position.copy(player.position).add(camera.position); // Start from camera lens
+            bullet.velocity = direction.multiplyScalar(50); // Bullet speed
+            bullet.userData = { type: 'playerBullet', lifetime: 2 }; // lifetime in seconds
+
+            scene.add(bullet);
+            bullets.push(bullet);
+        }
+        
+        function enemyShoot(enemy) {
+            const currentTime = performance.now() / 1000;
+            if (currentTime - enemy.userData.lastShotTime < 2) return; // Cooldown 2 seconds
+
+            enemy.userData.lastShotTime = currentTime;
+
+            const bulletGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+            const bulletMaterial = new THREE.MeshBasicMaterial({ color: 0xff00ff }); // Magenta
+            const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+
+            const direction = new THREE.Vector3().subVectors(player.position, enemy.position).normalize();
+             // Add some inaccuracy
+            direction.x += (Math.random() - 0.5) * 0.1;
+            direction.y += (Math.random() - 0.5) * 0.1;
+            direction.z += (Math.random() - 0.5) * 0.1;
+            direction.normalize();
+
+            bullet.position.copy(enemy.position).add(new THREE.Vector3(0, 0.5, 0)); // from enemy center
+            bullet.velocity = direction.multiplyScalar(20); // Slower than player
+            bullet.userData = { type: 'enemyBullet', lifetime: 3 }; 
+
+            scene.add(bullet);
+            enemyBullets.push(bullet);
+        }
+
+        function updatePlayer(deltaTime) {
+            if (playerHealth <= 0) {
+                 playerVelocity.set(0,0,0); // Stop movement if dead
+                 return;
+            }
+            let moveSpeed = playerSpeed * deltaTime;
+            const moveDirection = new THREE.Vector3();
+
+            // Keyboard movement
+            if (keys.w) moveDirection.z = -1;
+            if (keys.s) moveDirection.z = 1;
+            if (keys.a) moveDirection.x = -1;
+            if (keys.d) moveDirection.x = 1;
+
+            // Mobile joystick movement (left stick)
+            if (moveStick.active) {
+                moveDirection.z = -moveStick.y; // Y on joystick is forward/backward
+                moveDirection.x = moveStick.x;
+            }
+            
+            moveDirection.normalize(); // Ensure consistent speed in all directions
+             // Apply rotation AFTER getting direction vector
+            moveDirection.applyEuler(player.rotation);
+
+
+            playerVelocity.x = moveDirection.x * playerSpeed;
+            playerVelocity.z = moveDirection.z * playerSpeed;
+            
+            // Jumping
+            if ((keys.space || moveStick.y < -0.8 && moveStick.active) && onGround) { // Swipe up on move stick for jump
+                playerVelocity.y = jumpHeight;
+                onGround = false;
+            }
+
+            // Apply gravity
+            playerVelocity.addScaledVector(gravity, deltaTime);
+            
+            const prevPosition = player.position.clone();
+            player.position.addScaledVector(playerVelocity, deltaTime);
+
+            // Rudimentary Collision Detection & Resolution
+            onGround = false;
+            const playerBox = new THREE.Box3().setFromObject(player); // A small box around camera for collision
+            // Make player hitbox smaller and centered around feet for better ground collision
+            const playerFeetOffset = 0.8; // How much to lower the collision box
+            const playerHeadOffset = 0.2; // How much to raise top of collision box
+            playerBox.min.y += playerVelocity.y * deltaTime - playerFeetOffset; 
+            playerBox.max.y += playerVelocity.y * deltaTime + playerHeadOffset;
+
+            for (let i = 0; i < collidableObjects.length; i++) {
+                const obj = collidableObjects[i];
+                if (!obj.geometry) continue; // Skip if not a mesh (e.g. ground plane itself if not handled as box)
+                
+                const objectBox = new THREE.Box3().setFromObject(obj);
+
+                if (playerBox.intersectsBox(objectBox)) {
+                    const collisionNormal = new THREE.Vector3(); // Store resolution vector
+
+                    // X-axis collision
+                    const tempPlayerBoxX = playerBox.clone();
+                    tempPlayerBoxX.min.x = prevPosition.x + (playerVelocity.x * deltaTime) - 0.25; // Player width/2
+                    tempPlayerBoxX.max.x = prevPosition.x + (playerVelocity.x * deltaTime) + 0.25;
+                    tempPlayerBoxX.min.y = prevPosition.y - playerFeetOffset; 
+                    tempPlayerBoxX.max.y = prevPosition.y + playerHeadOffset; 
+                    if (tempPlayerBoxX.intersectsBox(objectBox)) {
+                        if (playerVelocity.x > 0) player.position.x = objectBox.min.x - 0.25 - 0.01; // Collision on right
+                        else if (playerVelocity.x < 0) player.position.x = objectBox.max.x + 0.25 + 0.01; // Collision on left
+                        playerVelocity.x = 0;
+                    }
+
+                    // Z-axis collision
+                    const tempPlayerBoxZ = playerBox.clone();
+                    tempPlayerBoxZ.min.z = prevPosition.z + (playerVelocity.z * deltaTime) - 0.25; // Player depth/2
+                    tempPlayerBoxZ.max.z = prevPosition.z + (playerVelocity.z * deltaTime) + 0.25;
+                    tempPlayerBoxZ.min.y = prevPosition.y - playerFeetOffset; 
+                    tempPlayerBoxZ.max.y = prevPosition.y + playerHeadOffset;
+                    if (tempPlayerBoxZ.intersectsBox(objectBox)) {
+                        if (playerVelocity.z > 0) player.position.z = objectBox.min.z - 0.25 - 0.01;
+                        else if (playerVelocity.z < 0) player.position.z = objectBox.max.z + 0.25 + 0.01;
+                        playerVelocity.z = 0;
+                    }
+                    
+                    // Y-axis collision (ground/ceiling)
+                    const tempPlayerBoxY = playerBox.clone(); // Use original y-movement
+                    tempPlayerBoxY.min.x = player.position.x - 0.25; // Use current X,Z after potential correction
+                    tempPlayerBoxY.max.x = player.position.x + 0.25;
+                    tempPlayerBoxY.min.z = player.position.z - 0.25;
+                    tempPlayerBoxY.max.z = player.position.z + 0.25;
+
+                    if (tempPlayerBoxY.intersectsBox(objectBox)) {
+                        if (playerVelocity.y > 0 && player.position.y < objectBox.max.y) { // Hitting ceiling
+                            player.position.y = objectBox.min.y - playerHeadOffset - 0.01;
+                            playerVelocity.y = 0;
+                        } else if (playerVelocity.y < 0 && player.position.y > objectBox.min.y) { // Landing on ground
+                            player.position.y = objectBox.max.y + playerFeetOffset;
+                            playerVelocity.y = 0;
+                            onGround = true;
+                        }
+                    }
+                }
+            }
+            
+            // Fall off map
+            if (player.position.y < -50) {
+                player.position.set(0, 10, 5); // Respawn
+                playerVelocity.set(0, 0, 0);
+                playerHealth = Math.max(0, playerHealth - 20); // Penalty for falling
+                updateHealthDisplay();
+            }
+
+
+            // Keyboard shooting
+            if (keys.x) {
+                shoot();
+                keys.x = false; // Single shot per press
+            }
+
+            // Mobile look (right stick) - very basic
+            if (lookStick.active) {
+                player.rotation.y -= lookStick.x * 0.05; // Adjust sensitivity
+                camera.rotation.x -= lookStick.y * 0.05;
+                camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
+            }
+        }
+
+        function updateEnemies(deltaTime) {
+            enemies.forEach(enemy => {
+                if (enemy.userData.health <= 0) return;
+
+                // "AI": Look at player
+                enemy.lookAt(player.position.x, enemy.position.y, player.position.z); // Keep enemy upright
+
+                const distanceToPlayer = enemy.position.distanceTo(player.position);
+
+                if (distanceToPlayer < 30 && playerHealth > 0) { // Attack range
+                    // Simple raycast for line of sight (LOS)
+                    const directionToPlayer = new THREE.Vector3().subVectors(player.position, enemy.position).normalize();
+                    const raycaster = new THREE.Raycaster(enemy.position, directionToPlayer, 0.1, distanceToPlayer);
+                    const intersects = raycaster.intersectObjects(collidableObjects.filter(o => o !== enemy), false); // Don't intersect self
+
+                    let hasLOS = true;
+                    if (intersects.length > 0) {
+                        // Check if the first intersected object is the player (or something very close to player)
+                        // This is tricky because player isn't directly in collidableObjects for raycasting this way
+                        // For simplicity, if anything is hit before player's distance, assume LOS is blocked.
+                        if(intersects[0].distance < distanceToPlayer - 1.0) { // minus player radius approx
+                           hasLOS = false;
+                        }
+                    }
+                    
+                    if(hasLOS){
+                         enemyShoot(enemy);
+                    }
+                }
+                // Basic movement (placeholder - can be complex)
+                // if (distanceToPlayer > 10 && distanceToPlayer < 40) {
+                //    const moveDirection = new THREE.Vector3().subVectors(player.position, enemy.position).normalize();
+                //    enemy.position.addScaledVector(moveDirection, 1 * deltaTime);
+                // }
+            });
+        }
+
+        function updateBullets(deltaTime) {
+            // Player bullets
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                bullet.position.addScaledVector(bullet.velocity, deltaTime);
+                bullet.userData.lifetime -= deltaTime;
+
+                if (bullet.userData.lifetime <= 0) {
+                    scene.remove(bullet);
+                    bullets.splice(i, 1);
+                    continue;
+                }
+
+                // Check collision with enemies
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
+                    if (enemy.userData.health <= 0) continue;
+                    if (bullet.position.distanceTo(enemy.position) < 1.0) { // Simple distance check
+                        enemy.userData.health -= 25;
+                        console.log("Enemy hit! Health:", enemy.userData.health);
+                        if (enemy.userData.health <= 0) {
+                            scene.remove(enemy);
+                            // Remove from collidables as well
+                            const col_idx = collidableObjects.indexOf(enemy);
+                            if(col_idx > -1) collidableObjects.splice(col_idx, 1);
+                            enemies.splice(j, 1);
+                            console.log("Enemy defeated!");
+                        }
+                        scene.remove(bullet);
+                        bullets.splice(i, 1);
+                        break; 
+                    }
+                }
+                 // Check collision with general collidable objects (walls, etc.)
+                if (bullets[i]) { // Bullet might have been removed by hitting enemy
+                    const bulletBox = new THREE.Box3().setFromObject(bullet);
+                    for (const obj of collidableObjects) {
+                        if (obj.userData && obj.userData.type === 'enemy') continue; // Already handled
+                        if (!obj.geometry) continue;
+                        const objectBox = new THREE.Box3().setFromObject(obj);
+                        if (bulletBox.intersectsBox(objectBox)) {
+                            scene.remove(bullet);
+                            bullets.splice(i, 1);
+                            break; 
+                        }
+                    }
+                }
+            }
+
+            // Enemy bullets
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const bullet = enemyBullets[i];
+                bullet.position.addScaledVector(bullet.velocity, deltaTime);
+                bullet.userData.lifetime -= deltaTime;
+
+                if (bullet.userData.lifetime <= 0) {
+                    scene.remove(bullet);
+                    enemyBullets.splice(i, 1);
+                    continue;
+                }
+
+                // Check collision with player
+                const playerSphere = new THREE.Sphere(player.position, 0.8); // Approx player radius
+                if (playerSphere.containsPoint(bullet.position) && playerHealth > 0) {
+                    playerHealth -= 10;
+                    updateHealthDisplay();
+                    console.log("Player hit! Health:", playerHealth);
+                    if (playerHealth <= 0) {
+                        console.log("Game Over!");
+                        document.getElementById('player-health').innerText = "GAME OVER";
+                        // Optionally, could show a game over screen or stop player input
+                    }
+                    scene.remove(bullet);
+                    enemyBullets.splice(i, 1);
+                    continue; 
+                }
+                 // Check collision with general collidable objects (walls, etc.)
+                if (enemyBullets[i]) { 
+                    const bulletBox = new THREE.Box3().setFromObject(bullet);
+                    for (const obj of collidableObjects) {
+                         if (obj.userData && obj.userData.type === 'enemy') continue;
+                         if (!obj.geometry) continue;
+                        const objectBox = new THREE.Box3().setFromObject(obj);
+                        if (bulletBox.intersectsBox(objectBox)) {
+                            scene.remove(bullet);
+                            enemyBullets.splice(i, 1);
+                            break; 
+                        }
+                    }
+                }
+            }
+        }
+        
+        function updateHealthDisplay() {
+            document.getElementById('player-health').innerText = `Health: ${Math.max(0, playerHealth)}`;
+            if (playerHealth <= 0) {
+                 document.getElementById('player-health').style.color = "red";
+            } else if (playerHealth < 30) {
+                 document.getElementById('player-health').style.color = "orange";
+            } else {
+                 document.getElementById('player-health').style.color = "lightgreen";
+            }
+        }
+
+        let lastTime = performance.now();
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const currentTime = performance.now();
+            const deltaTime = Math.min(0.1, (currentTime - lastTime) / 1000); // Cap delta time to prevent physics glitches
+            lastTime = currentTime;
+
+            updatePlayer(deltaTime);
+            updateEnemies(deltaTime);
+            updateBullets(deltaTime);
+            
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+</html>
