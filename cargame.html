@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>2D Car Racer - Single File</title>
+    <style>
+        /* CSS styles go here */
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #333;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden; /* Prevents scrollbars from canvas/UI interactions */
+            touch-action: none; /* Prevent default touch actions like scrolling/zooming */
+        }
+
+        #gameContainer {
+            position: relative;
+            border: 2px solid #555;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            background-color: #4CAF50; /* Road color - will be base for shoulders */
+            overflow: hidden; /* Crucial for containing elements */
+        }
+
+        #gameCanvas {
+            display: block; /* Removes extra space below canvas */
+            background-color: transparent; /* Will be drawn on by JS */
+        }
+
+        #uiContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none; /* Allow clicks to pass through to canvas unless an element below has pointer-events: auto */
+        }
+
+        .screen {
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.75);
+            padding: 25px;
+            border-radius: 12px;
+            width: 85%;
+            max-width: 450px;
+            box-sizing: border-box;
+            pointer-events: auto; /* Make screens interactive */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        h1, h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #FFD700; /* Gold */
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+        h1 { font-size: 2.2em; }
+        h2 { font-size: 1.8em; }
+
+
+        button {
+            background-color: #4CAF50; /* Green */
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin: 10px 5px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            pointer-events: auto; /* Ensure buttons are clickable */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+
+        #inGameUI {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background-color: transparent;
+            text-align: left;
+            padding: 0;
+            pointer-events: none; /* In-game UI should not be interactive */
+            width: auto; /* Don't take full width */
+        }
+
+        #inGameUI p {
+            margin: 5px 0;
+            font-size: 1.3em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px black;
+        }
+
+        .controls-info {
+            margin-top: 25px;
+            font-size: 0.95em;
+            color: #ddd;
+            line-height: 1.5;
+        }
+
+        .controls-info p {
+            margin: 8px 0;
+        }
+        .controls-info strong {
+            color: #FFD700;
+        }
+
+        #gameOverScreen p {
+            font-size: 1.1em;
+            margin: 10px 0;
+        }
+        #gameOverScreen p.new-highscore-text { /* Specific class for clarity */
+            display: none;
+            color: #66BB6A; /* Light Green for new high score */
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="uiContainer">
+            <!-- Main Menu -->
+            <div id="mainMenu" class="screen active">
+                <h1>Pixel Racer Pro</h1>
+                <button id="startGameBtn">Start Game</button>
+                <p>High Score: <span id="menuHighScore">0</span></p>
+                <div class="controls-info">
+                    <p><strong>PC:</strong> Arrow Keys Left/Right to Steer</p>
+                    <p><strong>Mobile:</strong> Drag Left/Right on Screen to Steer</p>
+                </div>
+            </div>
+
+            <!-- In-Game UI -->
+            <div id="inGameUI" class="screen">
+                <p>Score: <span id="currentScore">0</span></p>
+                <p>High Score: <span id="inGameHighScore">0</span></p>
+            </div>
+
+            <!-- Game Over Screen -->
+            <div id="gameOverScreen" class="screen">
+                <h2>Game Over!</h2>
+                <p>Your Score: <span id="finalScore">0</span></p>
+                <p class="new-highscore-text">🎉 New High Score! 🎉</p>
+                <button id="restartGameBtn">Play Again</button>
+                <button id="backToMenuBtn">Main Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript game logic goes here
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // UI Elements
+            const mainMenu = document.getElementById('mainMenu');
+            const startGameBtn = document.getElementById('startGameBtn');
+            const menuHighScoreDisplay = document.getElementById('menuHighScore');
+
+            const inGameUI = document.getElementById('inGameUI');
+            const currentScoreDisplay = document.getElementById('currentScore');
+            const inGameHighScoreDisplay = document.getElementById('inGameHighScore');
+
+            const gameOverScreen = document.getElementById('gameOverScreen');
+            const finalScoreDisplay = document.getElementById('finalScore');
+            const newHighScoreText = gameOverScreen.querySelector('.new-highscore-text');
+            const restartGameBtn = document.getElementById('restartGameBtn');
+            const backToMenuBtn = document.getElementById('backToMenuBtn');
+
+            let canvasWidth, canvasHeight;
+            let car, road;
+            let score = 0;
+            let highScore = localStorage.getItem('pixelRacerHighScore') || 0;
+            let gameState = 'menu'; // 'menu', 'playing', 'gameOver'
+            let animationFrameId;
+
+            // Game settings
+            const ROAD_WIDTH_PERCENT = 0.65; // % of canvas width
+            const LANE_MARKER_WIDTH = 7;
+            const LANE_MARKER_HEIGHT = 50;
+            const LANE_MARKER_GAP = 30;
+            const CAR_WIDTH = 50;
+            const CAR_HEIGHT = 80;
+            let baseGameSpeed = 5;
+            let gameSpeed = baseGameSpeed; 
+            const MAX_GAME_SPEED = 15;
+            const SPEED_INCREMENT = 0.002; // How much speed increases per frame
+
+            function resizeCanvas() {
+                const aspectRatio = 9 / 16; // Desired aspect ratio (width / height)
+                const maxHeight = window.innerHeight * 0.95;
+                const maxWidth = window.innerWidth * 0.95;
+
+                if (maxWidth / maxHeight > aspectRatio) { // Window is wider than aspect ratio
+                    canvasHeight = maxHeight;
+                    canvasWidth = canvasHeight * aspectRatio;
+                } else { // Window is taller or equal to aspect ratio
+                    canvasWidth = maxWidth;
+                    canvasHeight = canvasWidth / aspectRatio;
+                }
+                
+                // Ensure it doesn't exceed maximums even if aspect ratio is maintained
+                canvasWidth = Math.min(canvasWidth, 600); // Max width
+                canvasHeight = Math.min(canvasHeight, 800); // Max height for portrait
+
+
+                canvas.width = canvasWidth;
+                canvas.height = canvasHeight;
+                
+                document.getElementById('gameContainer').style.width = `${canvasWidth}px`;
+                document.getElementById('gameContainer').style.height = `${canvasHeight}px`;
+
+                if (road) road.updateDimensions();
+                if (car) car.updateDimensions();
+            }
+
+            class Car {
+                constructor() {
+                    this.baseWidth = CAR_WIDTH;
+                    this.baseHeight = CAR_HEIGHT;
+                    this.width = this.baseWidth;
+                    this.height = this.baseHeight;
+                    this.updateDimensions(); 
+                    this.color = '#e74c3c'; // Alizarin Crimson
+                    this.maxSpeedX = 10; // For keyboard control sensitivity
+                }
+
+                updateDimensions() {
+                    // Scale car based on canvas width (optional, for consistency)
+                    // this.width = canvasWidth * 0.08; 
+                    // this.height = this.width * (this.baseHeight / this.baseWidth);
+                    this.width = CAR_WIDTH;
+                    this.height = CAR_HEIGHT;
+
+                    this.x = canvasWidth / 2 - this.width / 2;
+                    this.y = canvasHeight - this.height - 30; // Near bottom
+                }
+
+                draw() {
+                    // Main body
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+
+                    // Simple details (windshield, lights)
+                    ctx.fillStyle = '#3498db'; // Peter River (blue for windshield)
+                    ctx.fillRect(this.x + this.width * 0.15, this.y + this.height * 0.1, this.width * 0.7, this.height * 0.3);
+
+                    ctx.fillStyle = '#f1c40f'; // Sun Flower (yellow for headlights)
+                    ctx.fillRect(this.x + this.width * 0.1, this.y + this.height * 0.02, this.width * 0.2, this.height * 0.1);
+                    ctx.fillRect(this.x + this.width * 0.7, this.y + this.height * 0.02, this.width * 0.2, this.height * 0.1);
+                    
+                    ctx.fillStyle = '#c0392b'; // Pomegranate (darker red for taillights)
+                    ctx.fillRect(this.x + this.width * 0.1, this.y + this.height * 0.85, this.width * 0.25, this.height * 0.1);
+                    ctx.fillRect(this.x + this.width * 0.65, this.y + this.height * 0.85, this.width * 0.25, this.height * 0.1);
+                }
+
+                update(input) {
+                    if (gameState !== 'playing') return;
+
+                    // Keyboard control
+                    if (input.keys['ArrowLeft'] || input.keys['a'] || input.keys['A']) {
+                        this.x -= this.maxSpeedX;
+                    }
+                    if (input.keys['ArrowRight'] || input.keys['d'] || input.keys['D']) {
+                        this.x += this.maxSpeedX;
+                    }
+                    
+                    // Mobile drag control (applied in touch handlers)
+
+                    // Keep car within road boundaries
+                    const roadLeftEdge = road.x + road.shoulderWidth;
+                    const roadRightEdge = road.x + road.width - road.shoulderWidth - this.width;
+                    
+                    if (this.x < roadLeftEdge) {
+                        this.x = roadLeftEdge;
+                        if (gameState === 'playing') gameOver();
+                    }
+                    if (this.x > roadRightEdge) {
+                        this.x = roadRightEdge;
+                        if (gameState === 'playing') gameOver();
+                    }
+                }
+            }
+
+            class Road {
+                constructor() {
+                    this.markers = [];
+                    this.shoulderWidth = 15; // Width of the grassy/colored shoulder
+                    this.shoulderColor = '#27ae60'; // Nephritis (darker green)
+                    this.roadColor = '#7f8c8d'; // Asphalt (grey)
+                    this.updateDimensions();
+                }
+
+                updateDimensions() {
+                    this.width = canvasWidth * ROAD_WIDTH_PERCENT;
+                    this.x = (canvasWidth - this.width) / 2; // Centered
+                    this.initMarkers();
+                }
+
+                initMarkers() {
+                    this.markers = [];
+                    for (let y = -LANE_MARKER_HEIGHT; y < canvasHeight + LANE_MARKER_HEIGHT; y += LANE_MARKER_HEIGHT + LANE_MARKER_GAP) {
+                        this.markers.push({ y: y });
+                    }
+                }
+
+                draw() {
+                    // Canvas background color is the outer grass/area
+                    
+                    // Road surface
+                    ctx.fillStyle = this.roadColor;
+                    ctx.fillRect(this.x, 0, this.width, canvasHeight);
+
+                    // Shoulders (drawn on top of road edges, but inside road bounds)
+                    ctx.fillStyle = this.shoulderColor;
+                    ctx.fillRect(this.x, 0, this.shoulderWidth, canvasHeight); // Left shoulder
+                    ctx.fillRect(this.x + this.width - this.shoulderWidth, 0, this.shoulderWidth, canvasHeight); // Right shoulder
+
+                    // Lane markers
+                    ctx.fillStyle = 'white';
+                    const markerX1 = this.x + this.width / 3 - LANE_MARKER_WIDTH / 2;
+                    const markerX2 = this.x + (this.width * 2) / 3 - LANE_MARKER_WIDTH / 2;
+
+                    this.markers.forEach(marker => {
+                        ctx.fillRect(markerX1, marker.y, LANE_MARKER_WIDTH, LANE_MARKER_HEIGHT);
+                        ctx.fillRect(markerX2, marker.y, LANE_MARKER_WIDTH, LANE_MARKER_HEIGHT);
+                    });
+                }
+
+                update() {
+                    if (gameState !== 'playing') return;
+                    this.markers.forEach(marker => {
+                        marker.y += gameSpeed;
+                        if (marker.y > canvasHeight) {
+                            marker.y = -LANE_MARKER_HEIGHT - LANE_MARKER_GAP + (marker.y - canvasHeight);
+                        }
+                    });
+                }
+            }
+
+            // Input Handling
+            const input = {
+                keys: {},
+                touchStartX: null,
+                touchCurrentX: null,
+                carStartDragX: null,
+            };
+
+            window.addEventListener('keydown', (e) => {
+                input.keys[e.key] = true;
+                // Prevent page scroll with arrow keys
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                    e.preventDefault();
+                }
+            });
+            window.addEventListener('keyup', (e) => input.keys[e.key] = false);
+
+            function handleTouchStart(clientX) {
+                if (gameState !== 'playing') return;
+                input.touchStartX = clientX;
+                input.carStartDragX = car.x;
+            }
+
+            function handleTouchMove(clientX) {
+                if (gameState !== 'playing' || input.touchStartX === null) return;
+                input.touchCurrentX = clientX;
+                let deltaX = input.touchCurrentX - input.touchStartX;
+                car.x = input.carStartDragX + deltaX;
+            }
+
+            function handleTouchEnd() {
+                input.touchStartX = null;
+                input.touchCurrentX = null;
+                input.carStartDragX = null;
+            }
+
+            // Touch events for canvas
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Important to prevent default browser actions
+                handleTouchStart(e.touches[0].clientX);
+            }, { passive: false });
+
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                handleTouchMove(e.touches[0].clientX);
+            }, { passive: false });
+
+            canvas.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                handleTouchEnd();
+            });
+             // Mouse events for PC drag (similar to touch)
+            canvas.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                handleTouchStart(e.clientX); // Use mouse clientX
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                e.preventDefault();
+                if (e.buttons === 1) { // Only if left mouse button is pressed
+                    handleTouchMove(e.clientX);
+                }
+            });
+
+            canvas.addEventListener('mouseup', (e) => {
+                e.preventDefault();
+                handleTouchEnd();
+            });
+            canvas.addEventListener('mouseleave', (e) => { // If mouse leaves canvas while dragging
+                handleTouchEnd();
+            });
+
+
+            function updateUIState(state) {
+                mainMenu.classList.remove('active');
+                inGameUI.classList.remove('active');
+                gameOverScreen.classList.remove('active');
+
+                menuHighScoreDisplay.textContent = highScore;
+                inGameHighScoreDisplay.textContent = highScore;
+
+                if (state === 'menu') {
+                    mainMenu.classList.add('active');
+                } else if (state === 'playing') {
+                    inGameUI.classList.add('active');
+                } else if (state === 'gameOver') {
+                    finalScoreDisplay.textContent = Math.floor(score);
+                    if (Math.floor(score) > highScore) {
+                        newHighScoreText.style.display = 'block';
+                    } else {
+                        newHighScoreText.style.display = 'none';
+                    }
+                    gameOverScreen.classList.add('active');
+                }
+            }
+
+            function initGame() {
+                score = 0;
+                gameSpeed = baseGameSpeed;
+                currentScoreDisplay.textContent = 0;
+                
+                if (!road) road = new Road(); else road.initMarkers();
+                if (!car) car = new Car(); else car.updateDimensions(); // Ensure car is positioned correctly after potential resize
+
+                updateUIState('playing');
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                gameLoop();
+            }
+
+            function startGame() {
+                gameState = 'playing';
+                initGame();
+            }
+
+            function gameOver() {
+                gameState = 'gameOver';
+                cancelAnimationFrame(animationFrameId);
+                const finalIntScore = Math.floor(score);
+                if (finalIntScore > highScore) {
+                    highScore = finalIntScore;
+                    localStorage.setItem('pixelRacerHighScore', highScore);
+                }
+                updateUIState('gameOver');
+            }
+
+            function gameLoop() {
+                if (gameState !== 'playing') return;
+
+                ctx.clearRect(0, 0, canvasWidth, canvasHeight); // Clear canvas
+
+                // Update game elements
+                road.update();
+                car.update(input);
+
+                // Draw game elements
+                // The canvas background set in CSS acts as the outer "grass"
+                road.draw(); // Draw road structure
+                car.draw();   // Draw car on top
+
+                // Update score & speed
+                score += (gameSpeed / baseGameSpeed); // Score increases faster at higher speeds
+                currentScoreDisplay.textContent = Math.floor(score);
+                
+                if (gameSpeed < MAX_GAME_SPEED) {
+                    gameSpeed += SPEED_INCREMENT;
+                }
+
+
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+            
+            // Event Listeners for UI buttons
+            startGameBtn.addEventListener('click', startGame);
+            restartGameBtn.addEventListener('click', startGame);
+            backToMenuBtn.addEventListener('click', () => {
+                gameState = 'menu';
+                updateUIState('menu');
+            });
+
+            // Initial setup
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                if (gameState === 'playing' || gameState === 'gameOver') {
+                    // If in game, redraw to adapt to new size immediately
+                    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                    if(road) road.draw(); // Redraw road if it exists
+                    if(car) car.draw();   // Redraw car if it exists
+                }
+            });
+
+            resizeCanvas(); // Call once on load
+            updateUIState('menu'); // Start at the main menu
+        });
+    </script>
+</body>
+</html>
