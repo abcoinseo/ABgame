@@ -2,48 +2,91 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Pixel Wood Stacker Deluxe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Pixel Wood Stacker ProMax</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
         :root {
-            --primary-bg: #2c3e50; /* Dark Slate Blue */
-            --secondary-bg: #34495e; /* Wet Asphalt */
-            --accent-color: #f1c40f; /* Sunflower Yellow */
-            --text-color: #ecf0f1; /* Light Grey */
-            --danger-color: #e74c3c; /* Alizarin Crimson */
-            --success-color: #2ecc71; /* Emerald Green */
-            --shadow-color: #c0392b; /* Red Shadow for 8-bit feel */
-            --block-border-shadow: rgba(0,0,0,0.2);
+            /* Provided Palette */
+            --bg-primary: #0A0F2C;
+            --accent-cyan: #00FFFF;
+            --text-main: #FFFFFF;
+            --electric-blue: #00BFFF;
+            --text-secondary: #B0BEC5;
+            /* --bg-gradient: defined by usage below */
+
+            /* Derived/Helper Pixel Art Colors */
+            --pixel-border-color: #00334D; /* Darker cyan/blue for borders */
+            --pixel-border-highlight: var(--accent-cyan); 
+            --pixel-shadow-color: #000000;
+
+            --button-bg: var(--electric-blue);
+            --button-text: var(--bg-primary);
+            --button-hover-bg: var(--accent-cyan);
+            --button-hover-text: var(--bg-primary);
+            --button-active-bg: #008FCC; /* Darker electric blue */
+
+            --danger-color: #FF4136; 
+            --success-color: #00E676; 
 
             --font-main: 'Press Start 2P', cursive;
+            --pixel-size: 2px; /* Base unit for pixel effects */
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
-            background-color: var(--primary-bg);
-            color: var(--text-color);
+            background-color: var(--bg-primary);
+            color: var(--text-main);
             font-family: var(--font-main);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
+            min-height: 100svh; /* Use svh for better mobile viewport height */
             margin: 0;
             overflow: hidden;
             text-align: center;
             padding: 10px;
-            box-sizing: border-box;
         }
 
+        .pixel-border-outset {
+            border-style: solid;
+            border-width: calc(var(--pixel-size) * 2);
+            border-image-slice: 2;
+            border-image-width: 2;
+            border-image-repeat: stretch;
+            border-image-source: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="6" height="6"><path d="M0 0h2v2H0zM2 2h2v2H2zM4 4h2v2H4z" fill="' + encodeURIComponent(getComputedStyle(document.documentElement).getPropertyValue('--pixel-border-color').trim()) + '"/><path d="M2 0h2v2H2zM4 2h2v2H4zM0 4h2v2H0z" fill="' + encodeURIComponent(getComputedStyle(document.documentElement).getPropertyValue('--pixel-border-highlight').trim()) + '"/></svg>');
+            image-rendering: pixelated;
+            padding: calc(var(--pixel-size) * 4);
+            position: relative; /* For potential absolute positioning inside */
+            background-color: var(--bg-primary); /* Inner background */
+        }
+        
+        .pixel-box { /* Alternative simple pixel border */
+            border: var(--pixel-size) solid var(--pixel-border-color);
+            box-shadow: 
+                inset 0 0 0 var(--pixel-size) var(--pixel-border-highlight),
+                var(--pixel-size) var(--pixel-size) 0 0 var(--pixel-shadow-color), /* Bottom-right shadow */
+                calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 2) 0 0 var(--pixel-shadow-color); /* Further shadow */
+            padding: 10px;
+            background-color: #0E1A45; /* Slightly lighter than main bg for depth */
+            margin-bottom: 15px;
+        }
+
+
         .screen {
-            display: none; /* Hidden by default, JS will manage visibility */
+            display: none;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: space-around; /* Better distribution */
             width: 100%;
-            max-width: 400px; /* Max width for content area */
-            padding: 20px;
+            max-width: 420px;
+            min-height: 80svh; /* Take up more vertical space */
+            padding: 15px;
             box-sizing: border-box;
         }
         .screen.active {
@@ -51,142 +94,189 @@
         }
 
         h1, h2 {
-            color: var(--accent-color);
-            text-shadow: 3px 3px 0px var(--shadow-color);
+            color: var(--accent-cyan);
+            text-shadow: var(--pixel-size) var(--pixel-size) 0px var(--pixel-shadow-color);
+            line-height: 1.2;
         }
-        h1 { font-size: 2em; margin-bottom: 20px; }
-        h2 { font-size: 1.6em; margin-bottom: 15px; }
+        h1 { font-size: 1.8em; margin-bottom: 20px; }
+        h2 { font-size: 1.4em; margin-bottom: 15px; }
 
         p {
-            font-size: 0.9em;
-            line-height: 1.6;
+            font-size: 0.8em;
+            line-height: 1.5;
             margin-bottom: 15px;
+            color: var(--text-secondary);
         }
-
-        button {
+        
+        button.pixel-button {
             font-family: var(--font-main);
-            background-color: var(--success-color);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 0.9em;
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            border: var(--pixel-size) solid var(--pixel-border-color);
+            padding: 10px 15px;
+            font-size: 0.8em;
             cursor: pointer;
-            border-radius: 5px;
             text-transform: uppercase;
-            box-shadow: 0 4px 0 #27ae60; /* Darker green shadow */
-            transition: all 0.1s ease;
-            margin: 10px 5px;
-            min-width: 150px;
+            box-shadow: 
+                inset 0 0 0 var(--pixel-size) var(--pixel-border-highlight), /* Inner highlight for 3D effect */
+                var(--pixel-size) var(--pixel-size) 0 0 var(--pixel-shadow-color); /* Outer shadow */
+            margin: 8px 5px;
+            min-width: 140px;
+            transition: none; /* No smooth transition for pixel art */
+            position: relative;
         }
-        button:hover { background-color: #27ae60; }
-        button:active { transform: translateY(2px); box-shadow: 0 2px 0 #27ae60; }
-        button.danger { background-color: var(--danger-color); box-shadow: 0 4px 0 #c0392b; }
-        button.danger:hover { background-color: #c0392b; }
-        button.danger:active { transform: translateY(2px); box-shadow: 0 2px 0 #c0392b; }
+        button.pixel-button:hover {
+            background-color: var(--button-hover-bg);
+            color: var(--button-hover-text);
+            border-color: var(--accent-cyan);
+        }
+        button.pixel-button:active {
+            transform: translate(var(--pixel-size), var(--pixel-size));
+            box-shadow: inset 0 0 0 var(--pixel-size) var(--pixel-border-highlight); /* Remove outer shadow */
+            background-color: var(--button-active-bg);
+        }
+        button.pixel-button.danger { background-color: var(--danger-color); }
+        button.pixel-button.danger:hover { background-color: #FF6B6B; }
+        button.pixel-button.danger:active { background-color: #D92C2C; transform: translate(var(--pixel-size), var(--pixel-size)); box-shadow: inset 0 0 0 var(--pixel-size) #FFAAAA; }
 
 
         #homeScreen .logo {
-            font-size: 2.5em; /* Larger title on home */
-            margin-bottom: 30px;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+        #homeScreen .game-hub-text {
+            font-size: 1.2em;
+            color: var(--text-main);
+            margin-bottom: 20px;
+        }
+        #pixelControllerIcon {
+            font-size: 2.5em; /* Make controller icon larger */
+            color: var(--electric-blue);
+            margin-bottom: 20px;
+            display: block;
         }
         #homeHighScore {
-            font-size: 1.1em;
-            background-color: var(--secondary-bg);
-            padding: 10px 15px;
-            border-radius: 5px;
-            border: 2px solid var(--accent-color);
+            font-size: 1em;
+            background-color: var(--bg-primary);
+            padding: 8px 12px;
+            border-radius: 0; /* Sharp edges */
+            border: var(--pixel-size) solid var(--accent-cyan);
+            box-shadow: var(--pixel-size) var(--pixel-size) 0 var(--pixel-shadow-color);
             margin-bottom: 25px;
+            color: var(--text-main);
         }
 
         #gameCanvasContainer {
-            background-color: var(--secondary-bg);
-            border: 5px solid #95a5a6; /* Silver */
-            box-shadow: 0 0 15px rgba(0,0,0,0.4), inset 0 0 8px rgba(0,0,0,0.2);
-            padding: 5px;
-            border-radius: 8px;
-            position: relative; /* For shake effect */
-            margin-bottom: 15px;
-            /* Make canvas container responsive but keep canvas fixed for pixel art */
-            width: calc(100% - 10px); /* Account for padding */
-            max-width: 330px; /* Canvas width + padding + border */
-            aspect-ratio: 320 / 480; /* Maintain aspect ratio if container resizes */
+            /* background-color: var(--bg-primary); */ /* No separate bg, canvas bg is enough */
+            border: calc(var(--pixel-size) * 2) solid var(--pixel-border-color);
+            box-shadow: 
+                inset 0 0 0 calc(var(--pixel-size)*1) var(--pixel-border-highlight), /* Inset highlight */
+                calc(var(--pixel-size) * 2) calc(var(--pixel-size) * 2) 0 0 var(--pixel-shadow-color);
+            padding: var(--pixel-size); /* Minimal padding */
+            position: relative;
+            margin-bottom: 10px;
+            width: calc(100% - 10px);
+            max-width: 320px; /* Keep canvas pixel density reasonable */
+            aspect-ratio: 320 / 480;
+            overflow: hidden; /* Clip particles that go outside */
         }
-        
         canvas#gameCanvas {
-            background-color: #7f8c8d; /* Asbestos grey - sky/background for game */
+            background-color: #1C2759; /* Darker blue for sky, fits palette */
             display: block;
             width: 100%;
             height: 100%;
-            /* border: 3px solid var(--primary-bg); */ /* Removed for cleaner look inside container */
+            image-rendering: pixelated; /* Crucial for crisp pixels */
         }
 
-        .shake-effect {
-            animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
-        }
+        .shake-effect { animation: shake 0.2s steps(4, end) infinite; }
         @keyframes shake {
-            10%, 90% { transform: translate3d(-1px, 0, 0) rotate(-0.5deg); }
-            20%, 80% { transform: translate3d(2px, 0, 0) rotate(0.5deg); }
-            30%, 50%, 70% { transform: translate3d(-3px, 0, 0) rotate(-1deg); }
-            40%, 60% { transform: translate3d(3px, 0, 0) rotate(1deg); }
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(calc(var(--pixel-size) * -2), calc(var(--pixel-size) * 1)); }
+            50% { transform: translate(calc(var(--pixel-size) * 2), calc(var(--pixel-size) * -1)); }
+            75% { transform: translate(calc(var(--pixel-size) * -1), calc(var(--pixel-size) * 2)); }
         }
 
 
         #gameUI {
             display: flex;
-            justify-content: space-around;
+            justify-content: space-between;
             width: 100%;
-            max-width: 320px;
+            max-width: 320px; /* Match canvas max width */
             margin-bottom: 10px;
         }
         #scoreDisplay, #currentHighScoreDisplay {
-            font-size: 1em;
-            background-color: var(--primary-bg);
-            padding: 8px 12px;
-            border-radius: 5px;
-            border: 2px solid var(--accent-color);
+            font-size: 0.8em;
+            background-color: var(--bg-primary);
+            padding: 6px 10px;
+            border: var(--pixel-size) solid var(--accent-cyan);
+            box-shadow: var(--pixel-size) var(--pixel-size) 0 var(--pixel-shadow-color);
+            color: var(--text-main);
         }
 
-        #gameOverScreen p {
-            font-size: 1.1em;
-        }
-        #finalScoreDisplay {
-            color: var(--accent-color);
-            font-weight: bold;
-        }
+        #gameOverScreen p { font-size: 1em; }
+        #finalScoreDisplay { color: var(--accent-cyan); font-weight: normal; }
         
         #instructions {
-            font-size: 0.8em;
+            font-size: 0.7em;
             max-width: 300px;
-            line-height: 1.5;
-            background-color: rgba(0,0,0,0.15);
-            padding: 10px;
-            border-radius: 5px;
+            line-height: 1.6;
+            background-color: rgba(0,0,0,0.2);
+            padding: 8px;
+            border: var(--pixel-size) dashed var(--text-secondary);
             margin-top: 15px;
+            color: var(--text-secondary);
         }
 
-        /* Mobile specific adjustments */
-        @media (max-width: 480px) {
-            h1 { font-size: 1.8em; }
-            h2 { font-size: 1.4em; }
-            #homeScreen .logo { font-size: 2em; }
-            button { padding: 10px 15px; font-size: 0.8em; min-width: 120px; }
-            #gameCanvasContainer { padding: 3px; border-width: 3px; }
-             #scoreDisplay, #currentHighScoreDisplay { font-size: 0.8em; padding: 6px 10px; }
-             #instructions { font-size: 0.7em; }
+        #mobileControls {
+            display: none; /* Hidden by default, JS shows on touch devices */
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0,0,0,0.5); /* Semi-transparent bar */
+            padding: 5px 0;
+            z-index: 100;
+            justify-content: space-around;
+            align-items: center;
         }
+        #mobileControls button {
+            font-size: 1.5em; /* Larger symbols */
+            padding: 8px 15px; /* Adjust for touch */
+            min-width: 60px;
+            margin: 0 5px;
+            box-shadow: var(--pixel-size) var(--pixel-size) 0 0 var(--pixel-shadow-color);
+        }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 1.6em; }
+            #homeScreen .logo { font-size: 2em; }
+            button.pixel-button { padding: 8px 12px; font-size: 0.7em; min-width: 120px; }
+            #scoreDisplay, #currentHighScoreDisplay { font-size: 0.7em; padding: 5px 8px; }
+            #instructions { font-size: 0.6em; }
+
+            #mobileControls button { font-size: 1.3em; padding: 6px 12px; }
+        }
+        /* Force show mobile controls for testing: */
+        /* #mobileControls { display: flex; } */
 
     </style>
 </head>
 <body>
 
-    <div id="homeScreen" class="screen active">
-        <h1 class="logo">Pixel Stacker</h1>
-        <p id="homeHighScore">High Score: 0</p>
-        <button id="startGameButton">Start Game</button>
+    <div id="homeScreen" class="screen active pixel-box">
+        <div>
+            <h1 class="logo">AB Stacker</h1>
+            <span id="pixelControllerIcon">🎮</span> <!-- U+1F3AE VIDEO GAME -->
+            <p class="game-hub-text">Game Hub</p>
+        </div>
+        <div>
+            <p id="homeHighScore">High Score: 0</p>
+            <button id="startGameButton" class="pixel-button">Start Game</button>
+        </div>
         <div id="instructions">
-            <b>Left/Right Arrows</b> or <b>A/D</b>: Move Block<br>
-            <b>Space</b>, <b>Down Arrow</b>, or <b>S</b>: Drop Block<br>
-            Stack perfectly for max width!
+            <b>Arrows / A,D</b>: Move<br>
+            <b>Space / S / Down</b>: Drop<br>
+            Perfect stacks keep width!
         </div>
     </div>
 
@@ -198,14 +288,22 @@
         <div id="gameCanvasContainer">
             <canvas id="gameCanvas"></canvas>
         </div>
-        <button id="pauseButton" style="display:none;">Pause (P)</button> <!-- Placeholder for future -->
+        <!-- Pause button can be added here if desired -->
     </div>
 
-    <div id="gameOverScreen" class="screen">
+    <div id="gameOverScreen" class="screen pixel-box">
         <h2>Game Over!</h2>
         <p>Final Score: <span id="finalScoreDisplay">0</span></p>
-        <button id="restartGameButton">Play Again</button>
-        <button id="backToMenuButton">Main Menu</button>
+        <div>
+            <button id="restartGameButton" class="pixel-button">Play Again</button>
+            <button id="backToMenuButton" class="pixel-button danger">Main Menu</button>
+        </div>
+    </div>
+
+    <div id="mobileControls">
+        <button id="touchLeft" class="pixel-button">◀</button> <!-- Left Arrow: ◀ -->
+        <button id="touchDrop" class="pixel-button">▼</button> <!-- Down Arrow: ▼ -->
+        <button id="touchRight" class="pixel-button">▶</button> <!-- Right Arrow: ▶ -->
     </div>
 
     <script>
@@ -220,31 +318,38 @@
 
         const homeHighScoreDisplay = document.getElementById('homeHighScore');
         const scoreDisplay = document.getElementById('scoreDisplay');
-        const currentHighScoreDisplay = document.getElementById('currentHighScoreDisplay'); // During game
+        const currentHighScoreDisplay = document.getElementById('currentHighScoreDisplay');
         const finalScoreDisplay = document.getElementById('finalScoreDisplay');
         
         const gameCanvasContainer = document.getElementById('gameCanvasContainer');
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
+        const mobileControlsDiv = document.getElementById('mobileControls');
+        const touchLeftButton = document.getElementById('touchLeft');
+        const touchRightButton = document.getElementById('touchRight');
+        const touchDropButton = document.getElementById('touchDrop');
+
         // --- Game Configuration ---
         const CANVAS_WIDTH = 320;
         const CANVAS_HEIGHT = 480;
-        const BLOCK_HEIGHT = 20;
-        const INITIAL_BLOCK_WIDTH = 100;
-        const MIN_BLOCK_WIDTH = 10; // Smallest a block can be
+        const BLOCK_HEIGHT = 16; // Slightly smaller blocks for more pixel detail room
+        const INITIAL_BLOCK_WIDTH = 96; // Multiple of pixel size (e.g. 2 or 4)
+        const MIN_BLOCK_WIDTH = 8;
         const BLOCK_START_Y = 0;
         
-        let BASE_FALL_SPEED = 1.5; // Initial speed
+        let BASE_FALL_SPEED = 1.2;
         let currentFallSpeed = BASE_FALL_SPEED;
-        const FAST_FALL_MULTIPLIER = 5; // How much faster when player drops
-        const MOVE_SPEED = 6;
-        const PERFECT_STACK_TOLERANCE = 2; // Pixels tolerance for a "perfect" stack
+        const FAST_FALL_MULTIPLIER = 6;
+        const MOVE_SPEED = 4; // Multiple of pixel size for crisp movement
+        const PERFECT_STACK_TOLERANCE = 1; // Very strict for pixel perfect
+        const PIXEL_UNIT = 2; // Visual pixel size for game elements
 
-        const WOOD_COLORS = [
-            { base: '#A0522D', grain1: '#8B4513', grain2: '#D2691E' },
-            { base: '#CD853F', grain1: '#A0522D', grain2: '#F4A460' },
-            { base: '#D2B48C', grain1: '#BC8F8F', grain2: '#DEB887' }
+        // Adjusted wood colors to fit new palette better
+        const WOOD_COLORS = [ // Base, Grain1 (Darker), Grain2 (Lighter Highlight)
+            { base: '#4A77A4', grain1: '#2E4D73', grain2: '#77AADD' }, // Bluish Wood
+            { base: '#608FB8', grain1: '#3C638A', grain2: '#89B9E0' }, // Lighter Bluish
+            { base: '#7A68A3', grain1: '#504077', grain2: '#A08CC0' }  // Purplish Wood
         ];
 
         // --- Game State ---
@@ -256,46 +361,37 @@
         let gameLoopId = null;
         let particles = [];
         let difficultyLevel = 0;
+        let isTouchDevice = false;
+        let touchMoveState = { left: false, right: false };
 
-        // --- Particle System ---
+
+        // --- Particle System (Square Particles) ---
         class Particle {
-            constructor(x, y, color, size, speed) {
+            constructor(x, y, color, size) {
                 this.x = x;
                 this.y = y;
-                this.size = Math.random() * size + 2;
-                this.speedX = (Math.random() - 0.5) * speed;
-                this.speedY = (Math.random() - 0.5) * speed - 1; // Slight upward bias
+                this.size = (Math.random() * size + PIXEL_UNIT) - ((Math.random() * size + PIXEL_UNIT) % PIXEL_UNIT); // Ensure multiple of PIXEL_UNIT
+                this.speedX = (Math.random() - 0.5) * (PIXEL_UNIT * 2);
+                this.speedY = (Math.random() * -2 - 0.5) * PIXEL_UNIT; // Bias upwards
                 this.color = color;
-                this.life = 100; // Frames
+                this.life = 60; // Frames
             }
-
             update() {
                 this.x += this.speedX;
                 this.y += this.speedY;
+                this.speedY += 0.1 * PIXEL_UNIT; // Gravity
                 this.life--;
             }
-
             draw() {
                 ctx.fillStyle = this.color;
-                ctx.globalAlpha = this.life / 100;
-                ctx.fillRect(this.x, this.y, this.size, this.size);
+                ctx.globalAlpha = Math.max(0, this.life / 60);
+                ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
                 ctx.globalAlpha = 1;
             }
         }
-
-        function createParticles(x, y, count, color, size = 5, speed = 3) {
+        function createParticles(x, y, count, color, baseSize = PIXEL_UNIT * 2) {
             for (let i = 0; i < count; i++) {
-                particles.push(new Particle(x, y, color, size, speed));
-            }
-        }
-
-        function updateAndDrawParticles() {
-            for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update();
-                particles[i].draw();
-                if (particles[i].life <= 0) {
-                    particles.splice(i, 1);
-                }
+                particles.push(new Particle(x, y, color, baseSize));
             }
         }
 
@@ -309,6 +405,13 @@
         function initApp() {
             canvas.width = CANVAS_WIDTH;
             canvas.height = CANVAS_HEIGHT;
+            ctx.imageSmoothingEnabled = false; // Crucial for pixel art
+
+            isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+            if (isTouchDevice) {
+                mobileControlsDiv.style.display = 'flex';
+            }
+
             loadHighScore();
             updateHighScoreDisplays();
             showScreen(homeScreen);
@@ -316,291 +419,230 @@
             startGameButton.addEventListener('click', startGame);
             restartGameButton.addEventListener('click', startGame);
             backToMenuButton.addEventListener('click', () => {
-                loadHighScore(); // Ensure home screen shows latest if game was quit mid-way
-                updateHighScoreDisplays();
-                showScreen(homeScreen);
+                loadHighScore(); updateHighScoreDisplays(); showScreen(homeScreen);
             });
             
             setupInputListeners();
         }
 
-        function loadHighScore() {
-            highScore = parseInt(localStorage.getItem('pixelWoodDeluxeHighScore')) || 0;
-        }
-
+        function loadHighScore() { highScore = parseInt(localStorage.getItem('pixelStackerProMaxHS')) || 0; }
         function saveHighScore() {
-            if (score > highScore) {
-                highScore = score;
-                localStorage.setItem('pixelWoodDeluxeHighScore', highScore);
-            }
+            if (score > highScore) { highScore = score; localStorage.setItem('pixelStackerProMaxHS', highScore); }
         }
-        
         function updateHighScoreDisplays() {
             homeHighScoreDisplay.textContent = `High Score: ${highScore}`;
             currentHighScoreDisplay.textContent = `High: ${highScore}`;
         }
 
         function startGame() {
-            isGameOver = false;
-            score = 0;
-            difficultyLevel = 0;
-            BASE_FALL_SPEED = 1.5; // Reset base speed
-            currentFallSpeed = BASE_FALL_SPEED;
-            stackedBlocks = [];
-            particles = [];
-            updateScoreDisplay();
-            updateHighScoreDisplays(); // Show current high score in game UI
+            isGameOver = false; score = 0; difficultyLevel = 0;
+            BASE_FALL_SPEED = 1.2; currentFallSpeed = BASE_FALL_SPEED;
+            stackedBlocks = []; particles = [];
+            updateScoreDisplay(); updateHighScoreDisplays();
             
-            const baseBlockWidth = CANVAS_WIDTH * 0.8; // Wider base
+            const baseBlockWidth = CANVAS_WIDTH * 0.8 - ( (CANVAS_WIDTH * 0.8) % (PIXEL_UNIT * 2) ); // Multiple of pixel unit
             const baseBlock = {
                 x: (CANVAS_WIDTH - baseBlockWidth) / 2,
                 y: CANVAS_HEIGHT - BLOCK_HEIGHT,
-                width: baseBlockWidth,
-                height: BLOCK_HEIGHT,
-                colorSet: getRandomWoodColor()
+                width: baseBlockWidth, height: BLOCK_HEIGHT, colorSet: getRandomWoodColor()
             };
             stackedBlocks.push(baseBlock);
-
             spawnNewBlock(INITIAL_BLOCK_WIDTH);
             
             if (gameLoopId) cancelAnimationFrame(gameLoopId);
             gameLoop();
-
             showScreen(gameScreen);
         }
         
-        function getRandomWoodColor() {
-            return WOOD_COLORS[Math.floor(Math.random() * WOOD_COLORS.length)];
-        }
+        function getRandomWoodColor() { return WOOD_COLORS[Math.floor(Math.random() * WOOD_COLORS.length)]; }
 
         function spawnNewBlock(width) {
+            let newWidth = Math.max(width, MIN_BLOCK_WIDTH);
+            newWidth = newWidth - (newWidth % PIXEL_UNIT); // Ensure multiple of pixel unit
+
             currentBlock = {
-                x: Math.random() * (CANVAS_WIDTH - width), // Start at random X
-                y: BLOCK_START_Y - BLOCK_HEIGHT, // Start slightly above screen
-                width: Math.max(width, MIN_BLOCK_WIDTH),
-                height: BLOCK_HEIGHT,
-                colorSet: getRandomWoodColor(),
-                vy: currentFallSpeed,
-                isFastDropping: false
+                x: (Math.random() * (CANVAS_WIDTH - newWidth)) - ((Math.random() * (CANVAS_WIDTH - newWidth)) % PIXEL_UNIT),
+                y: BLOCK_START_Y - BLOCK_HEIGHT,
+                width: newWidth, height: BLOCK_HEIGHT, colorSet: getRandomWoodColor(),
+                vy: currentFallSpeed, isFastDropping: false
             };
         }
         
-        // --- Game Loop ---
         function gameLoop() {
-            if (isGameOver) {
-                handleGameOver();
-                return;
-            }
-
-            updateGame();
-            drawGame();
-
+            if (isGameOver) { handleGameOver(); return; }
+            updateGame(); drawGame();
             gameLoopId = requestAnimationFrame(gameLoop);
         }
 
-        // --- Update Logic ---
         function updateGame() {
             if (!currentBlock) return;
 
-            currentBlock.y += currentBlock.vy;
+            // Handle touch movement
+            if (isTouchDevice) {
+                if (touchMoveState.left) moveCurrentBlock(-MOVE_SPEED);
+                if (touchMoveState.right) moveCurrentBlock(MOVE_SPEED);
+            }
 
-            // Collision detection with top stacked block
+            currentBlock.y += currentBlock.vy;
+            currentBlock.y = Math.round(currentBlock.y / PIXEL_UNIT) * PIXEL_UNIT; // Snap to pixel grid
+
             const topStackedBlock = stackedBlocks[stackedBlocks.length - 1];
             if (currentBlock.y + currentBlock.height >= topStackedBlock.y) {
                 processBlockLanding(topStackedBlock);
             }
-
-            // Check if block falls off screen entirely
-            if (currentBlock.y > CANVAS_HEIGHT + BLOCK_HEIGHT) { 
-                endGame();
-            }
+            if (currentBlock.y > CANVAS_HEIGHT + BLOCK_HEIGHT) endGame();
             
-            // Particle updates
-            for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update();
-                if (particles[i].life <= 0) {
-                    particles.splice(i, 1);
-                }
-            }
+            particles.forEach((p, i) => { p.update(); if (p.life <= 0) particles.splice(i, 1); });
         }
 
+        function moveCurrentBlock(deltaX) {
+            if (!currentBlock) return;
+            currentBlock.x += deltaX;
+            // Snap to pixel grid and constrain
+            currentBlock.x = Math.round(currentBlock.x / PIXEL_UNIT) * PIXEL_UNIT;
+            currentBlock.x = Math.max(0, Math.min(currentBlock.x, CANVAS_WIDTH - currentBlock.width));
+        }
+        
+        function fastDropCurrentBlock() {
+            if (!currentBlock || currentBlock.isFastDropping) return;
+            currentBlock.vy = BASE_FALL_SPEED * FAST_FALL_MULTIPLIER;
+            currentBlock.isFastDropping = true;
+        }
+
+
         function processBlockLanding(topStackedBlock) {
-            // Calculate overlap
             const overlapStart = Math.max(currentBlock.x, topStackedBlock.x);
             const overlapEnd = Math.min(currentBlock.x + currentBlock.width, topStackedBlock.x + topStackedBlock.width);
             let newWidth = overlapEnd - overlapStart;
+            newWidth = Math.floor(newWidth / PIXEL_UNIT) * PIXEL_UNIT; // Ensure pixel perfect width
 
-            if (newWidth > 0) { // Landed on stack
+            if (newWidth >= PIXEL_UNIT) {
                 currentBlock.y = topStackedBlock.y - BLOCK_HEIGHT;
                 currentBlock.x = overlapStart;
                 currentBlock.width = newWidth;
                 
                 stackedBlocks.push({...currentBlock});
-                score++;
-                updateScoreDisplay();
-                updateDifficulty();
+                score++; updateScoreDisplay(); updateDifficulty();
+                createParticles(currentBlock.x + newWidth / 2, currentBlock.y, 5 + Math.floor(newWidth/16), currentBlock.colorSet.grain2, PIXEL_UNIT * 2);
 
-                createParticles(currentBlock.x + newWidth / 2, currentBlock.y, 5 + Math.floor(newWidth/20), currentBlock.colorSet.grain2, 4, 2);
-
-                // Perfect stack bonus: retain previous width (or slightly larger if perfectly on wider)
                 const alignmentDiff = Math.abs(currentBlock.x - topStackedBlock.x);
                 if (alignmentDiff <= PERFECT_STACK_TOLERANCE && newWidth >= topStackedBlock.width - PERFECT_STACK_TOLERANCE) {
-                    newWidth = topStackedBlock.width; // Maintain width on perfect stack
-                     createParticles(currentBlock.x + newWidth / 2, currentBlock.y, 10, '#FFD700', 6, 3); // Gold particles for perfect
+                    newWidth = topStackedBlock.width; // Perfect stack!
+                    createParticles(currentBlock.x + newWidth / 2, currentBlock.y, 10, var(--accent-cyan), PIXEL_UNIT * 3);
                 } else {
-                    triggerScreenShake(150, 2); // Shake on imperfect stack
+                    triggerScreenShake(150);
                 }
 
-                if (newWidth < MIN_BLOCK_WIDTH / 2) { // Too small to continue
-                    endGame();
-                    return;
-                }
-                
+                if (newWidth < MIN_BLOCK_WIDTH) { endGame(); return; }
                 spawnNewBlock(newWidth);
                 
-                // Shift view if stack gets too high
-                if (stackedBlocks.length > 8 && stackedBlocks[stackedBlocks.length -1].y < CANVAS_HEIGHT * 0.4) {
+                if (stackedBlocks.length > 10 && stackedBlocks[stackedBlocks.length -1].y < CANVAS_HEIGHT * 0.5) {
                     shiftBlocksDown();
                 }
-
-            } else { // Missed the stack
-                createParticles(currentBlock.x + currentBlock.width / 2, currentBlock.y + currentBlock.height, 20, currentBlock.colorSet.base, 6, 4);
+            } else {
+                createParticles(currentBlock.x + currentBlock.width / 2, currentBlock.y + currentBlock.height, 20, currentBlock.colorSet.base, PIXEL_UNIT * 3);
                 endGame();
             }
         }
         
         function updateDifficulty() {
-            // Increase fall speed every few points
-            if (score > 0 && score % 3 === 0) {
+            if (score > 0 && score % 4 === 0 && difficultyLevel < 10) { // Cap difficulty increase
                 difficultyLevel++;
-                BASE_FALL_SPEED = Math.min(BASE_FALL_SPEED + 0.15, 5); // Cap speed
+                BASE_FALL_SPEED = Math.min(BASE_FALL_SPEED + 0.1, 3.0);
                 currentFallSpeed = currentBlock.isFastDropping ? BASE_FALL_SPEED * FAST_FALL_MULTIPLIER : BASE_FALL_SPEED;
                 if(currentBlock) currentBlock.vy = currentFallSpeed;
             }
-            // Optionally, make starting blocks slightly narrower at higher scores (careful with this)
-            // if (score > 0 && score % 10 === 0) {
-            //     INITIAL_BLOCK_WIDTH = Math.max(INITIAL_BLOCK_WIDTH - 5, CANVAS_WIDTH / 4);
-            // }
         }
 
         function shiftBlocksDown() {
-            const shiftAmount = BLOCK_HEIGHT * 2.5;
+            const shiftAmount = BLOCK_HEIGHT * 2;
             stackedBlocks.forEach(block => block.y += shiftAmount);
-            // Remove blocks that are now off-screen from the bottom of the array
-            stackedBlocks = stackedBlocks.filter(block => block.y < CANVAS_HEIGHT + BLOCK_HEIGHT * 2);
+            stackedBlocks = stackedBlocks.filter(block => block.y < CANVAS_HEIGHT + BLOCK_HEIGHT * 3);
         }
 
-        function triggerScreenShake(duration = 200, intensity = 3) {
+        let shakeTimeout;
+        function triggerScreenShake(duration = 200) {
             gameCanvasContainer.classList.add('shake-effect');
-            // Dynamically set shake intensity via CSS custom properties if needed, or just use fixed CSS
-            // gameCanvasContainer.style.setProperty('--shake-intensity', `${intensity}px`); 
-            setTimeout(() => {
-                gameCanvasContainer.classList.remove('shake-effect');
-            }, duration);
+            clearTimeout(shakeTimeout);
+            shakeTimeout = setTimeout(() => gameCanvasContainer.classList.remove('shake-effect'), duration);
         }
 
         function endGame() {
-            isGameOver = true;
-            saveHighScore();
-            // Big particle explosion for game over
-            if (currentBlock) {
-                 createParticles(currentBlock.x + currentBlock.width/2, currentBlock.y + currentBlock.height/2, 50, '#e74c3c', 8, 5);
-            } else if (stackedBlocks.length > 0) {
-                const lastBlock = stackedBlocks[stackedBlocks.length-1];
-                 createParticles(lastBlock.x + lastBlock.width/2, lastBlock.y + lastBlock.height/2, 50, '#e74c3c', 8, 5);
-            }
+            isGameOver = true; saveHighScore();
+            if (currentBlock) createParticles(currentBlock.x + currentBlock.width/2, currentBlock.y + currentBlock.height/2, 40, var(--danger-color), PIXEL_UNIT * 4);
         }
-
         function handleGameOver() {
             cancelAnimationFrame(gameLoopId);
-            finalScoreDisplay.textContent = score;
-            updateHighScoreDisplays(); // Ensure high score is up-to-date on game over screen
+            finalScoreDisplay.textContent = score; updateHighScoreDisplays();
             showScreen(gameOverScreen);
         }
 
-        // --- Drawing ---
         function drawGame() {
-            ctx.fillStyle = '#7f8c8d'; // Sky color
+            ctx.fillStyle = canvas.style.backgroundColor; // From CSS
             ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-            stackedBlocks.forEach(block => drawWoodBlock(block));
-            if (currentBlock && !isGameOver) {
-                drawWoodBlock(currentBlock);
-            }
-            updateAndDrawParticles(); // Draw particles on top
+            stackedBlocks.forEach(block => drawPixelArtBlock(block));
+            if (currentBlock && !isGameOver) drawPixelArtBlock(currentBlock);
+            particles.forEach(p => p.draw());
         }
 
-        function drawWoodBlock(block) {
+        function drawPixelArtBlock(block) {
             const { x, y, width, height, colorSet } = block;
-            if (y + height < 0 || y > CANVAS_HEIGHT) return; // Don't draw off-screen blocks
+            if (y + height < 0 || y > CANVAS_HEIGHT) return;
 
+            // Base color
             ctx.fillStyle = colorSet.base;
             ctx.fillRect(x, y, width, height);
 
+            // Simple pixel grain (horizontal lines)
             ctx.fillStyle = colorSet.grain1; // Darker grain
-            for (let i = 0; i < Math.max(1, width / 4); i++) {
-                if (width > 4) ctx.fillRect(x + Math.random() * (width - 2), y, 1 + Math.random(), height);
+            for (let r = PIXEL_UNIT; r < height - PIXEL_UNIT; r += PIXEL_UNIT * 2) {
+                ctx.fillRect(x, y + r, width, PIXEL_UNIT);
             }
-            for (let j = 0; j < Math.max(1, height / 5); j++) {
-                 if (height > 2) ctx.fillRect(x, y + Math.random() * (height - 1), width, 1);
-            }
-            
-            ctx.fillStyle = colorSet.grain2; // Lighter grain/highlights
-             for (let k = 0; k < Math.max(1, width * height / 200); k++) {
-                if (width > 2 && height > 2) {
-                    ctx.fillRect(x + Math.random() * (width - 1), y + Math.random() * (height - 1), 1, 1);
+
+            // Highlights (dots or small patches)
+            ctx.fillStyle = colorSet.grain2; // Lighter highlight
+            const numHighlights = Math.floor((width * height) / (PIXEL_UNIT * PIXEL_UNIT * 50)); // Density
+            for (let i = 0; i < numHighlights; i++) {
+                if (width > PIXEL_UNIT && height > PIXEL_UNIT) {
+                    const hx = x + (Math.floor(Math.random() * (width / PIXEL_UNIT)) * PIXEL_UNIT);
+                    const hy = y + (Math.floor(Math.random() * (height / PIXEL_UNIT)) * PIXEL_UNIT);
+                    ctx.fillRect(hx, hy, PIXEL_UNIT, PIXEL_UNIT);
                 }
             }
             
-            // "Pixel" border/shadow
-            ctx.fillStyle = 'var(--block-border-shadow)';
-            if (width > 2 && height > 2) {
-                ctx.fillRect(x + width - 2, y + 1, 2, height - 2); // Right
-                ctx.fillRect(x + 1, y + height - 2, width - 2, 2); // Bottom
-            }
+            // Pixel Border (darker outline)
+            ctx.fillStyle = var(--pixel-shadow-color); // Black outline
+            // Top & Bottom
+            ctx.fillRect(x, y, width, PIXEL_UNIT);
+            ctx.fillRect(x, y + height - PIXEL_UNIT, width, PIXEL_UNIT);
+            // Left & Right
+            ctx.fillRect(x, y + PIXEL_UNIT, PIXEL_UNIT, height - PIXEL_UNIT * 2);
+            ctx.fillRect(x + width - PIXEL_UNIT, y + PIXEL_UNIT, PIXEL_UNIT, height - PIXEL_UNIT * 2);
         }
         
-        function updateScoreDisplay() {
-            scoreDisplay.textContent = `Score: ${score}`;
-        }
+        function updateScoreDisplay() { scoreDisplay.textContent = `Score: ${score}`; }
 
-        // --- Event Listeners & Input ---
         function setupInputListeners() {
             window.addEventListener('keydown', (e) => {
                 if (isGameOver || !currentBlock) return;
-
                 let keyProcessed = true;
                 switch (e.key.toLowerCase()) {
-                    case 'arrowleft':
-                    case 'a':
-                        currentBlock.x -= MOVE_SPEED;
-                        break;
-                    case 'arrowright':
-                    case 'd':
-                        currentBlock.x += MOVE_SPEED;
-                        break;
-                    case 'arrowdown':
-                    case 's':
-                    case ' ': // Space bar
-                        if (!currentBlock.isFastDropping) {
-                            currentBlock.vy = BASE_FALL_SPEED * FAST_FALL_MULTIPLIER;
-                            currentBlock.isFastDropping = true;
-                        }
-                        break;
-                    default:
-                        keyProcessed = false;
+                    case 'arrowleft': case 'a': moveCurrentBlock(-MOVE_SPEED); break;
+                    case 'arrowright': case 'd': moveCurrentBlock(MOVE_SPEED); break;
+                    case 'arrowdown': case 's': case ' ': fastDropCurrentBlock(); break;
+                    default: keyProcessed = false;
                 }
-                if (keyProcessed) e.preventDefault(); // Prevent page scroll on arrow keys / space
-
-                // Constrain block within canvas bounds
-                if (currentBlock.x < 0) currentBlock.x = 0;
-                if (currentBlock.x + currentBlock.width > CANVAS_WIDTH) {
-                    currentBlock.x = CANVAS_WIDTH - currentBlock.width;
-                }
+                if (keyProcessed) e.preventDefault();
             });
+
+            // Touch controls
+            touchLeftButton.addEventListener('touchstart', (e) => { e.preventDefault(); touchMoveState.left = true; });
+            touchLeftButton.addEventListener('touchend', (e) => { e.preventDefault(); touchMoveState.left = false; });
+            touchRightButton.addEventListener('touchstart', (e) => { e.preventDefault(); touchMoveState.right = true; });
+            touchRightButton.addEventListener('touchend', (e) => { e.preventDefault(); touchMoveState.right = false; });
+            touchDropButton.addEventListener('touchstart', (e) => { e.preventDefault(); fastDropCurrentBlock(); });
         }
 
-        // --- Start App ---
         window.addEventListener('load', initApp);
     </script>
 </body>
