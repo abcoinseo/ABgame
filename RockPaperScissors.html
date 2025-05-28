@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Rock Paper Scissors</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0A0F2C;
+            --accent-cyan: #00FFFF;
+            --text-main: #FFFFFF;
+            --electric-blue: #00BFFF;
+            --text-secondary: #B0BEC5;
+            --bg-gradient: linear-gradient(180deg, #0d153f 0%, #0A0F2C 100%);
+            --danger-red: #FF4136;
+            --success-green: #2ECC40;
+            --warning-yellow: #FFDC00;
+
+            --pixel-art-unit: 8px; /* For hand "pixels" */
+            --ui-pixel-unit: 3px;   /* For UI element "pixels" like borders */
+            --hand-pixel-color: var(--text-main);
+            --hand-bg-color: #1e2a57; /* Darker blue for hand background */
+            --shadow-color: #050816; /* Darker version of bg-primary for shadows */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Press Start 2P', cursive;
+            image-rendering: pixelated; /* For any images, though not using raster here */
+            -ms-interpolation-mode: nearest-neighbor; /* IE */
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            text-align: center;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+
+        header#hero-section {
+            background: var(--bg-gradient);
+            padding: 20px 10px;
+            border-bottom: var(--ui-pixel-unit) solid var(--text-secondary);
+            margin-bottom: 20px;
+            box-shadow: 0px var(--ui-pixel-unit) 0px 0px var(--shadow-color);
+        }
+
+        #game-title {
+            color: var(--accent-cyan);
+            font-size: 2rem; /* Responsive later */
+            text-shadow: var(--ui-pixel-unit) var(--ui-pixel-unit) 0 var(--shadow-color);
+            margin-bottom: 10px;
+        }
+        
+        .pixel-controller-icon {
+            display: inline-block;
+            width: calc(var(--pixel-art-unit) * 4);
+            height: calc(var(--pixel-art-unit) * 3);
+            position: relative;
+        }
+        .pixel-controller-icon div {
+            position: absolute;
+            background-color: var(--electric-blue);
+        }
+        .pixel-controller-icon .dpad-center { width: var(--pixel-art-unit); height: var(--pixel-art-unit); top: var(--pixel-art-unit); left: var(--pixel-art-unit); }
+        .pixel-controller-icon .dpad-up { width: var(--pixel-art-unit); height: var(--pixel-art-unit); top: 0; left: var(--pixel-art-unit); }
+        .pixel-controller-icon .dpad-down { width: var(--pixel-art-unit); height: var(--pixel-art-unit); top: calc(var(--pixel-art-unit) * 2); left: var(--pixel-art-unit); }
+        .pixel-controller-icon .dpad-left { width: var(--pixel-art-unit); height: var(--pixel-art-unit); top: var(--pixel-art-unit); left: 0; }
+        .pixel-controller-icon .dpad-right { width: var(--pixel-art-unit); height: var(--pixel-art-unit); top: var(--pixel-art-unit); left: calc(var(--pixel-art-unit) * 2); }
+        .pixel-controller-icon .button-a { width: var(--pixel-art-unit); height: var(--pixel-art-unit); top: calc(var(--pixel-art-unit)*1.5); left: calc(var(--pixel-art-unit) * 3); border-radius: 50%; background-color: var(--danger-red);}
+
+
+        main#app-container {
+            flex-grow: 1;
+            width: 100%;
+            max-width: 600px; /* Max width for larger screens */
+            margin: 0 auto;
+            padding: 0 10px;
+        }
+
+        .screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background-color: rgba(0,0,0,0.1); /* Slight contrast for screen area */
+            border: var(--ui-pixel-unit) solid var(--text-secondary);
+            box-shadow: var(--ui-pixel-unit) var(--ui-pixel-unit) 0px 0px var(--shadow-color);
+        }
+        .screen.hidden {
+            display: none;
+        }
+
+        h2 {
+            color: var(--accent-cyan);
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            text-shadow: var(--ui-pixel-unit) var(--ui-pixel-unit) 0 var(--shadow-color);
+        }
+
+        .pixel-button {
+            background-color: var(--electric-blue);
+            color: var(--text-main);
+            border: var(--ui-pixel-unit) solid var(--bg-primary);
+            padding: 15px 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-shadow: 1px 1px 0 var(--shadow-color);
+            box-shadow: var(--ui-pixel-unit) var(--ui-pixel-unit) 0px 0px var(--shadow-color);
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            position: relative; /* For ::before pseudo-element trick */
+        }
+        .pixel-button:hover {
+            background-color: var(--accent-cyan);
+            color: var(--bg-primary);
+        }
+        .pixel-button:active {
+            transform: translate(var(--ui-pixel-unit), var(--ui-pixel-unit));
+            box-shadow: none;
+        }
+        .pixel-button.secondary {
+            background-color: var(--text-secondary);
+            color: var(--bg-primary);
+        }
+        .pixel-button.secondary:hover {
+            background-color: #cad темно; /* Lighter gray */
+            color: var(--bg-primary);
+        }
+
+        #game-screen .scoreboard {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+        #game-screen .scoreboard span {
+            color: var(--accent-cyan);
+        }
+
+        .player-areas-container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            gap: 10px; /* Gap between player areas */
+            align-items: flex-start; /* Align items to the top */
+        }
+
+        .player-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            min-width: 120px; /* Ensure it doesn't get too small */
+        }
+        .player-area h3 {
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        .hand-display-container {
+            width: calc(var(--pixel-art-unit) * 7 + var(--ui-pixel-unit) * 2); /* 5 pixels + border */
+            height: calc(var(--pixel-art-unit) * 7 + var(--ui-pixel-unit) * 2); /* 5 pixels + border */
+            background-color: var(--hand-bg-color);
+            border: var(--ui-pixel-unit) solid var(--text-secondary);
+            box-shadow: var(--ui-pixel-unit) var(--ui-pixel-unit) 0px 0px var(--shadow-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative; /* For animation */
+        }
+        
+        .pixel-art-hand {
+            display: grid; /* JS will set columns/rows */
+            /* JS sets width and height */
+        }
+        .pixel-art-hand .pixel {
+            width: var(--pixel-art-unit);
+            height: var(--pixel-art-unit);
+        }
+        .pixel-art-hand .pixel.filled {
+            background-color: var(--hand-pixel-color);
+        }
+        .pixel-art-hand .pixel.empty {
+            background-color: transparent; /* Or inherit from hand-display-container */
+        }
+
+        .choices-container {
+            display: flex;
+            flex-direction: column; /* Stack buttons on smaller screens */
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        #result-message {
+            font-size: 1.2rem;
+            min-height: 2em; /* Reserve space */
+            margin-top: 15px;
+        }
+        #result-message.win { color: var(--success-green); }
+        #result-message.lose { color: var(--danger-red); }
+        #result-message.tie { color: var(--warning-yellow); }
+
+        #pvp-message, #p1-choice-display-pvp {
+            font-size: 1rem;
+            color: var(--accent-cyan);
+        }
+
+        footer {
+            border-top: var(--ui-pixel-unit) solid var(--text-secondary);
+            padding: 15px;
+            margin-top: 30px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            box-shadow: 0px -var(--ui-pixel-unit) 0px 0px var(--shadow-color);
+        }
+
+        /* Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(calc(var(--pixel-art-unit) * -0.5)); }
+            50% { transform: translateX(calc(var(--pixel-art-unit) * 0.5)); }
+            75% { transform: translateX(calc(var(--pixel-art-unit) * -0.25)); }
+        }
+        .shaking {
+            animation: shake 0.3s linear 3; /* Shake 3 times */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            #game-title {
+                font-size: 1.5rem;
+            }
+            h2 {
+                font-size: 1.2rem;
+            }
+            .pixel-button {
+                padding: 12px 18px;
+                font-size: 0.9rem;
+            }
+            .choices-container {
+                width: 100%; /* Make choice buttons take full width */
+            }
+            .player-areas-container {
+                flex-direction: column; /* Stack player areas */
+                align-items: center;
+                gap: 20px;
+            }
+            .player-area {
+                width: 100%; /* Full width for player areas when stacked */
+            }
+             #game-screen .scoreboard {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <header id="hero-section">
+        <h1 id="game-title">PIXEL R P S</h1>
+        <div class="pixel-controller-icon" aria-label="Pixel art controller icon">
+            <div class="dpad-up"></div><div class="dpad-down"></div>
+            <div class="dpad-left"></div><div class="dpad-right"></div>
+            <div class="dpad-center"></div>
+            <div class="button-a"></div>
+        </div>
+    </header>
+
+    <main id="app-container">
+        <section id="menu-screen" class="screen">
+            <h2>Game Hub</h2>
+            <button id="pvp-button" class="pixel-button">Player vs Player</button>
+            <button id="pvai-button" class="pixel-button">Player vs AI</button>
+        </section>
+
+        <section id="game-screen" class="screen hidden">
+            <div class="scoreboard">
+                <p><span id="player1-name">Player 1</span>: <span id="player1-score">0</span></p>
+                <p><span id="player2-name">Player 2</span>: <span id="player2-score">0</span></p>
+            </div>
+
+            <div class="player-areas-container">
+                <div class="player-area" id="p1-area">
+                    <h3 id="p1-area-title">Player 1</h3>
+                    <div class="hand-display-container">
+                        <div class="pixel-art-hand" id="player1-hand"></div>
+                    </div>
+                    <div class="choices-container" id="p1-choices">
+                        <button class="pixel-button choice-button" data-choice="rock">Rock</button>
+                        <button class="pixel-button choice-button" data-choice="paper">Paper</button>
+                        <button class="pixel-button choice-button" data-choice="scissors">Scissors</button>
+                    </div>
+                     <p id="p1-choice-display-pvp" class="hidden"></p>
+                </div>
+
+                <div class="player-area" id="p2-area">
+                    <h3 id="p2-area-title">Player 2/AI</h3>
+                    <div class="hand-display-container">
+                        <div class="pixel-art-hand" id="player2-hand"></div>
+                    </div>
+                    <div class="choices-container hidden" id="p2-choices">
+                        <button class="pixel-button choice-button" data-choice="rock">Rock</button>
+                        <button class="pixel-button choice-button" data-choice="paper">Paper</button>
+                        <button class="pixel-button choice-button" data-choice="scissors">Scissors</button>
+                    </div>
+                    <p id="waiting-for-p2-msg" class="hidden">Waiting for Player 2...</p>
+                </div>
+            </div>
+
+            <p id="result-message"></p>
+            
+            <div style="display:flex; gap:10px; margin-top: 10px;">
+                <button id="play-again-button" class="pixel-button hidden">Play Again</button>
+                <button id="back-to-menu-button" class="pixel-button secondary">Back to Menu</button>
+            </div>
+        </section>
+        
+        <section id="pvp-transition-screen" class="screen hidden">
+            <h2 id="pvp-transition-title">Player 2's Turn</h2>
+            <p id="pvp-transition-message">Player 1 has made a choice. Player 2, please make your selection.</p>
+            <p>(Scroll down if needed)</p>
+            <button id="pvp-continue-button" class="pixel-button">Show P2 Controls</button>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>© 2023 8-Bit RPS. Design by AI & Human.</p>
+    </footer>
+
+    <script>
+        // --- DOM Elements ---
+        const menuScreen = document.getElementById('menu-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const pvpTransitionScreen = document.getElementById('pvp-transition-screen');
+
+        const pvpButton = document.getElementById('pvp-button');
+        const pvaiButton = document.getElementById('pvai-button');
+        
+        const player1NameDisplay = document.getElementById('player1-name');
+        const player2NameDisplay = document.getElementById('player2-name');
+        const player1ScoreDisplay = document.getElementById('player1-score');
+        const player2ScoreDisplay = document.getElementById('player2-score');
+
+        const player1HandDisplay = document.getElementById('player1-hand');
+        const player2HandDisplay = document.getElementById('player2-hand');
+        
+        const p1ChoicesContainer = document.getElementById('p1-choices');
+        const p2ChoicesContainer = document.getElementById('p2-choices');
+        const p1ChoiceButtons = p1ChoicesContainer.querySelectorAll('.choice-button');
+        const p2ChoiceButtons = p2ChoicesContainer.querySelectorAll('.choice-button');
+
+        const p1AreaTitle = document.getElementById('p1-area-title');
+        const p2AreaTitle = document.getElementById('p2-area-title');
+        const p1ChoiceDisplayPVP = document.getElementById('p1-choice-display-pvp');
+        const waitingForP2Msg = document.getElementById('waiting-for-p2-msg');
+
+
+        const resultMessage = document.getElementById('result-message');
+        const playAgainButton = document.getElementById('play-again-button');
+        const backToMenuButton = document.getElementById('back-to-menu-button');
+
+        const pvpContinueButton = document.getElementById('pvp-continue-button');
+        const pvpTransitionTitle = document.getElementById('pvp-transition-title');
+        const pvpTransitionMessage = document.getElementById('pvp-transition-message');
+
+        // --- Game State ---
+        let P1_SCORE = 0;
+        let P2_SCORE = 0;
+        let P1_CHOICE = null;
+        let P2_CHOICE = null;
+        let CURRENT_GAME_MODE = null; // 'pvp' or 'pvai'
+        const CHOICES = ['rock', 'paper', 'scissors'];
+
+        // --- Pixel Art Hand Shapes (7x7 grid) ---
+        // 1 = filled, 0 = empty
+        const HAND_GRID_SIZE = 7; // Defines the grid dimensions (7x7)
+
+        const rockShape = [
+            [0,0,1,1,1,0,0],
+            [0,1,1,1,1,1,0],
+            [0,1,1,1,1,1,0],
+            [1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1],
+            [0,1,1,1,1,1,0],
+            [0,0,1,1,1,0,0]
+        ];
+
+        const paperShape = [
+            [0,1,1,1,1,1,0],
+            [0,1,1,1,1,1,0],
+            [0,1,0,0,0,1,0],
+            [0,1,0,0,0,1,0],
+            [0,1,0,0,0,1,0],
+            [0,1,1,1,1,1,0],
+            [0,1,1,1,1,1,0]
+        ];
+
+        const scissorsShape = [
+            [0,1,1,0,0,1,1],
+            [0,1,1,0,0,1,1],
+            [0,0,1,0,1,0,0],
+            [0,0,0,1,0,0,0],
+            [0,0,1,0,1,0,0],
+            [0,1,1,0,0,1,0],
+            [0,1,1,0,0,1,0]
+        ];
+        
+        const questionMarkShape = [
+            [0,0,1,1,1,0,0],
+            [0,1,0,0,0,1,0],
+            [0,0,0,0,0,1,0],
+            [0,0,0,1,1,0,0],
+            [0,0,0,1,0,0,0],
+            [0,0,0,0,0,0,0],
+            [0,0,0,1,0,0,0]
+        ];
+
+
+        const handShapes = {
+            rock: rockShape,
+            paper: paperShape,
+            scissors: scissorsShape,
+            default: questionMarkShape // For initial state or waiting
+        };
+
+        // --- Utility Functions ---
+        function showScreen(screenElement) {
+            menuScreen.classList.add('hidden');
+            gameScreen.classList.add('hidden');
+            pvpTransitionScreen.classList.add('hidden');
+            screenElement.classList.remove('hidden');
+        }
+
+        function drawHand(handContainerElement, shapeName) {
+            const shape = handShapes[shapeName] || handShapes.default;
+            const pixelArtUnit = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--pixel-art-unit'));
+            
+            handContainerElement.innerHTML = ''; // Clear previous hand
+            handContainerElement.style.gridTemplateColumns = `repeat(${HAND_GRID_SIZE}, ${pixelArtUnit}px)`;
+            handContainerElement.style.gridTemplateRows = `repeat(${HAND_GRID_SIZE}, ${pixelArtUnit}px)`;
+            handContainerElement.style.width = `${HAND_GRID_SIZE * pixelArtUnit}px`;
+            handContainerElement.style.height = `${HAND_GRID_SIZE * pixelArtUnit}px`;
+
+            for (let r = 0; r < HAND_GRID_SIZE; r++) {
+                for (let c = 0; c < HAND_GRID_SIZE; c++) {
+                    const pixel = document.createElement('div');
+                    pixel.classList.add('pixel');
+                    if (shape[r] && shape[r][c] === 1) {
+                        pixel.classList.add('filled');
+                    } else {
+                        pixel.classList.add('empty');
+                    }
+                    handContainerElement.appendChild(pixel);
+                }
+            }
+        }
+        
+        async function animateHand(handElement, finalChoice) {
+            handElement.parentElement.classList.add('shaking'); // Add to container for better visual effect
+            const tempChoices = ['rock', 'paper', 'scissors'];
+            for (let i = 0; i < 3; i++) { // Cycle a few times
+                for (const choice of tempChoices) {
+                    drawHand(handElement, choice);
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+            }
+            drawHand(handElement, finalChoice);
+            handElement.parentElement.classList.remove('shaking');
+        }
+
+
+        function updateScores() {
+            player1ScoreDisplay.textContent = P1_SCORE;
+            player2ScoreDisplay.textContent = P2_SCORE;
+        }
+        
+        function resetHandsAndMessage() {
+            drawHand(player1HandDisplay, 'default');
+            drawHand(player2HandDisplay, 'default');
+            resultMessage.textContent = 'Choose your weapon!';
+            resultMessage.className = ''; // Clear color classes
+        }
+
+        function initializeGameScreen() {
+            resetHandsAndMessage();
+            updateScores();
+            playAgainButton.classList.add('hidden');
+            p1ChoicesContainer.classList.remove('hidden');
+            p1ChoiceButtons.forEach(btn => btn.disabled = false);
+            p1ChoiceDisplayPVP.classList.add('hidden');
+            waitingForP2Msg.classList.add('hidden');
+
+            if (CURRENT_GAME_MODE === 'pvai') {
+                player1NameDisplay.textContent = 'Player';
+                player2NameDisplay.textContent = 'AI';
+                p2AreaTitle.textContent = 'AI';
+                p2ChoicesContainer.classList.add('hidden');
+            } else if (CURRENT_GAME_MODE === 'pvp') {
+                player1NameDisplay.textContent = 'Player 1';
+                player2NameDisplay.textContent = 'Player 2';
+                p1AreaTitle.textContent = 'Player 1';
+                p2AreaTitle.textContent = 'Player 2';
+                p2ChoicesContainer.classList.add('hidden'); // P2 choices hidden initially
+            }
+        }
+        
+        // --- Game Logic ---
+        function getAIChoice() {
+            return CHOICES[Math.floor(Math.random() * CHOICES.length)];
+        }
+
+        function determineWinner(choice1, choice2) {
+            if (choice1 === choice2) return 'tie';
+            if (
+                (choice1 === 'rock' && choice2 === 'scissors') ||
+                (choice1 === 'scissors' && choice2 === 'paper') ||
+                (choice1 === 'paper' && choice2 === 'rock')
+            ) {
+                return 'p1';
+            }
+            return 'p2';
+        }
+
+        async function processRound(player1Choice, player2Choice) {
+            P1_CHOICE = player1Choice;
+            P2_CHOICE = player2Choice;
+
+            // Animate both hands simultaneously
+            const p1AnimPromise = animateHand(player1HandDisplay, P1_CHOICE);
+            const p2AnimPromise = animateHand(player2HandDisplay, P2_CHOICE);
+            await Promise.all([p1AnimPromise, p2AnimPromise]);
+
+            const winner = determineWinner(P1_CHOICE, P2_CHOICE);
+
+            if (winner === 'tie') {
+                resultMessage.textContent = "It's a TIE!";
+                resultMessage.className = 'tie';
+            } else if (winner === 'p1') {
+                resultMessage.textContent = `${player1NameDisplay.textContent} wins!`;
+                resultMessage.className = 'win';
+                P1_SCORE++;
+            } else { // p2 wins
+                resultMessage.textContent = `${player2NameDisplay.textContent} wins!`;
+                resultMessage.className = 'lose';
+                P2_SCORE++;
+            }
+            updateScores();
+            playAgainButton.classList.remove('hidden');
+        }
+
+        // --- Event Listeners ---
+        pvpButton.addEventListener('click', () => {
+            CURRENT_GAME_MODE = 'pvp';
+            showScreen(gameScreen);
+            initializeGameScreen();
+        });
+
+        pvaiButton.addEventListener('click', () => {
+            CURRENT_GAME_MODE = 'pvai';
+            showScreen(gameScreen);
+            initializeGameScreen();
+        });
+
+        backToMenuButton.addEventListener('click', () => {
+            P1_SCORE = 0;
+            P2_SCORE = 0; // Reset scores when going to menu
+            P1_CHOICE = null;
+            P2_CHOICE = null;
+            showScreen(menuScreen);
+        });
+
+        playAgainButton.addEventListener('click', () => {
+            initializeGameScreen();
+            P1_CHOICE = null;
+            P2_CHOICE = null;
+        });
+
+        p1ChoiceButtons.forEach(button => {
+            button.addEventListener('click', async () => {
+                const choice = button.dataset.choice;
+                P1_CHOICE = choice;
+                p1ChoiceButtons.forEach(btn => btn.disabled = true); // Disable P1 buttons
+                
+                drawHand(player1HandDisplay, 'default'); // Show question mark or blank while P2 chooses in PvP
+                drawHand(player2HandDisplay, 'default');
+
+                if (CURRENT_GAME_MODE === 'pvai') {
+                    const aiChoice = getAIChoice();
+                    await processRound(P1_CHOICE, aiChoice);
+                } else if (CURRENT_GAME_MODE === 'pvp') {
+                    p1ChoicesContainer.classList.add('hidden');
+                    p1ChoiceDisplayPVP.textContent = `Player 1 chose.`; // Don't reveal choice
+                    p1ChoiceDisplayPVP.classList.remove('hidden');
+                    waitingForP2Msg.classList.remove('hidden');
+                    showScreen(pvpTransitionScreen); // Go to transition screen
+                }
+            });
+        });
+
+        pvpContinueButton.addEventListener('click', () => {
+            showScreen(gameScreen); // Go back to game screen
+            waitingForP2Msg.classList.add('hidden');
+            p2ChoicesContainer.classList.remove('hidden'); // Show P2 choices
+            p2ChoiceButtons.forEach(btn => btn.disabled = false);
+            
+            // Hide P1 hand during P2's choice if desired, or keep it as 'default'
+            // drawHand(player1HandDisplay, 'default');
+        });
+
+
+        p2ChoiceButtons.forEach(button => {
+            button.addEventListener('click', async () => {
+                if (CURRENT_GAME_MODE === 'pvp' && P1_CHOICE) {
+                    const choice = button.dataset.choice;
+                    P2_CHOICE = choice;
+                    p2ChoiceButtons.forEach(btn => btn.disabled = true);
+                    p2ChoicesContainer.classList.add('hidden');
+                    p1ChoiceDisplayPVP.classList.add('hidden'); // Hide "Player 1 chose" msg
+                    
+                    await processRound(P1_CHOICE, P2_CHOICE);
+                }
+            });
+        });
+
+        // --- Initial Setup ---
+        drawHand(player1HandDisplay, 'default');
+        drawHand(player2HandDisplay, 'default');
+        showScreen(menuScreen); // Start at menu
+    </script>
+</body>
+</html>
