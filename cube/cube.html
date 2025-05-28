@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <!-- Must be FIRST in <head> to ensure proper rendering and font scaling -->
+    <title>ABS Block Ninja Game - Official Site</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Play ABS Block Ninja Game! A fast-paced, addictive block-slicing arcade game. Test your ninja skills and climb the leaderboards. Powered by ABS StudioX.">
+    <meta name="keywords" content="ABS Block Ninja, Block Ninja Game, Ninja Game, Arcade Game, HTML5 Game, Casual Game, ABS StudioX, Fun Game, Mobile Game">
+    <meta name="author" content="ABS StudioX">
+    <link rel="canonical" href="https://YOUR_PROJECT_NAME.vercel.app/"> <!-- REPLACE with your actual deployed URL -->
+
+    <!-- Favicon and App Icons -->
+    <link rel="icon" href="/favicon.ico" sizes="any"> <!-- Or /path/to/favicon.ico -->
+    <link rel="icon" href="/icon.svg" type="image/svg+xml"> <!-- If you have an SVG icon -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png"> <!-- 180x180, or /path/to/apple-touch-icon.png -->
+    <link rel="manifest" href="/manifest.json"> <!-- Or /path/to/manifest.json -->
+
+    <!-- Open Graph / Facebook Meta Tags (ogp.me) -->
+    <meta property="og:title" content="ABS Block Ninja Game - Slice and Dice!">
+    <meta property="og:description" content="Join the block-slicing fun in ABS Block Ninja Game! How high can you score? Powered by ABS StudioX.">
+    <meta property="og:type" content="website"> <!-- Or "game" if appropriate for your target platforms -->
+    <meta property="og:url" content="https://YOUR_PROJECT_NAME.vercel.app/"> <!-- REPLACE with your actual deployed URL -->
+    <meta property="og:image" content="https://YOUR_PROJECT_NAME.vercel.app/og-image.png"> <!-- REPLACE with URL to your 1200x630px image -->
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="ABS Block Ninja Game Title Screen or Gameplay Screenshot">
+    <meta property="og:site_name" content="ABS Block Ninja Game">
+    <!-- <meta property="fb:app_id" content="YOUR_FACEBOOK_APP_ID"> --> <!-- Optional: If you have a Facebook App ID -->
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image"> <!-- Essential for a nice looking card -->
+    <meta name="twitter:title" content="ABS Block Ninja Game - Are you the ultimate Block Ninja?">
+    <meta name="twitter:description" content="Test your reflexes in ABS Block Ninja Game! Slice blocks, avoid bombs, and set new high scores. Powered by ABS StudioX.">
+    <meta name="twitter:image" content="https://YOUR_PROJECT_NAME.vercel.app/og-image.png"> <!-- REPLACE - Same image as og:image is fine, 1200x630px -->
+    <meta name="twitter:image:alt" content="ABS Block Ninja Game Visual">
+    <!-- <meta name="twitter:site" content="@YourTwitterHandle"> --> <!-- Optional: Your game or studio's Twitter handle -->
+    <!-- <meta name="twitter:creator" content="@CreatorTwitterHandle"> --> <!-- Optional: Creator's Twitter handle -->
+
+    <!-- Theme Color for Browsers -->
+    <meta name="theme-color" content="#ff4500"> <!-- Match your game's primary color, same as manifest.json theme_color -->
+    <meta name="msapplication-TileColor" content="#ff4500"> <!-- For Windows Tiles -->
+    <!-- <meta name="msapplication-config" content="/browserconfig.xml"> --> <!-- Optional: For more detailed Windows tile customization -->
+
+    <!-- Your Game Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- IMPORTANT: Any ad network scripts or other external scripts that need to be in the head -->
+    <!-- However, your current ad script is better placed before </body> -->
+
+</head>
+<body>
+
+    <!-- Game canvas -->
+    <canvas id="c"></canvas>
+
+    <!-- Gameplay HUD -->
+    <div class="hud">
+        <div class="hud__score">
+            <div class="score-lbl">SCORE: 0</div>
+            <div class="cube-count-lbl">CUBES: 0</div>
+        </div>
+        <div class="pause-btn">
+            <div></div> <!-- Line 1 for pause icon -->
+            <div></div> <!-- Line 2 for pause icon -->
+        </div>
+        <div class="slowmo">
+            <div class="slowmo__bar"></div>
+        </div>
+    </div>
+
+    <!-- Menu System -->
+    <div class="menus">
+        <div class="menu menu--main active"> <!-- Add 'active' to show by default -->
+            <h1>ABS Block Ninja</h1>
+            <button type="button" class="play-normal-btn">PLAY GAME</button>
+            <button type="button" class="play-casual-btn">CASUAL MODE</button>
+            <div class="credits">Powered By  <a href="https://t.me/absstudiox" target="_blank" rel="noopener noreferrer">ABS StudioX</a></div>
+        </div>
+        <div class="menu menu--pause">
+            <h1>Paused</h1>
+            <button type="button" class="resume-btn">RESUME GAME</button>
+            <button type="button" class="menu-btn--pause">MAIN MENU</button>
+        </div>
+        <div class="menu menu--score">
+            <h1>Game Over</h1>
+            <h2>Your Score:</h2>
+            <div class="final-score-lbl">0</div>
+            <div class="high-score-lbl">High Score: 0</div>
+            <button type="button" class="play-again-btn">PLAY AGAIN</button>
+            <button type="button" class="menu-btn--score">MAIN MENU</button>
+        </div>
+    </div>
+
+    <!-- ADVERTISEMENT FOOTER CONTAINER -->
+    <div id="ad-container-footer">
+        <script type="text/javascript">
+            atOptions = {
+                'key' : 'b521a39ffe233d598ed24da5a5698a18',
+                'format' : 'iframe',
+                'height' : 50,
+                'width' : 320,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/b521a39ffe233d598ed24da5a5698a18/invoke.js"></script>
+    </div>
+    <!-- END ADVERTISEMENT FOOTER CONTAINER -->
+
+    <script src="script.js" defer></script>
+</body>
+</html>
