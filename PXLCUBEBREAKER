@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>PXL CUBE BREAKER PRO</title>
+    <style>
+        :root {
+            --bg-primary: #0A0F2C;
+            --accent-cyan: #00FFFF;
+            --electric-blue: #00BFFF;
+            --text-main: #FFFFFF;
+            --text-secondary: #B0BEC5;
+            --cube-magenta: #FF00FF;
+            --cube-yellow: #FFFF00;
+            --cube-lime: #00FF00;
+            --cube-red: #FF0000;
+            --cube-orange: #FFA500;
+            --cube-bomb-body: #333344;
+            --cube-bomb-core: var(--accent-cyan);
+            --danger-red: #FF1133;
+            --powerup-life: #4CAF50;
+            --powerup-shield: #2196F3;
+            --powerup-score: #FFC107;
+            --powerup-slowmo: #607D8B;
+            --powerup-freeze: #03A9F4;
+        }
+
+        @font-face {
+            font-family: 'PixelFont';
+            src: local('Courier New'), local('Courier'), monospace;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            font-family: 'PixelFont', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #gameContainer {
+            position: relative;
+            border: 4px solid var(--electric-blue);
+            background-color: #000;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.3);
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            transition: transform 0.05s ease-out, border-color 0.1s; /* For shake and life loss flash */
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #uiLayer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .hud {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px; 
+            color: var(--text-main);
+            text-shadow: 2px 2px var(--bg-primary);
+        }
+        .hud-item {
+            padding: 5px 8px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border: 2px solid var(--electric-blue);
+        }
+        #gameModeDisplay {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            padding: 3px 6px;
+            background-color: rgba(0,0,0,0.5);
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            transition: opacity 0.5s ease-out;
+        }
+        #powerUpStatusContainer {
+            position: absolute;
+            bottom: 10px; /* Position at the bottom */
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            padding: 5px;
+            background-color: rgba(0,0,0,0.4);
+            border-radius: 4px;
+        }
+        .powerup-status-item {
+            font-size: 14px;
+            color: var(--text-main);
+            padding: 3px 6px;
+            border-radius: 3px;
+            min-width: 50px;
+            text-align: center;
+        }
+
+
+        #messageOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(10, 15, 44, 0.92); /* Slightly more opaque */
+            display: none; 
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            z-index: 10;
+            pointer-events: all;
+        }
+        .menu-view {
+            display: none; 
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 90%;
+            max-width: 380px;
+        }
+        .menu-view.active-view {
+            display: flex;
+        }
+
+        .menu-view h1 {
+            font-size: 36px;
+            color: var(--accent-cyan);
+            text-shadow: 3px 3px var(--electric-blue), 0 0 10px var(--accent-cyan);
+            margin-bottom: 15px;
+        }
+        .menu-view p {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 20px; /* Adjusted margin */
+            line-height: 1.4;
+        }
+        #highScoreDisplay {
+            font-size: 18px;
+            color: var(--cube-yellow);
+            margin-top: -10px;
+            margin-bottom: 20px;
+        }
+
+        .pixelButton {
+            font-family: 'PixelFont', monospace;
+            font-size: 20px;
+            padding: 10px 20px;
+            background-color: var(--accent-cyan);
+            color: var(--bg-primary);
+            border: 2px solid var(--electric-blue);
+            text-shadow: 1px 1px var(--text-main);
+            cursor: pointer;
+            box-shadow: 0 3px var(--electric-blue);
+            outline: none;
+            pointer-events: all;
+            transition: background-color 0.1s, box-shadow 0.1s, transform 0.1s;
+            margin: 5px;
+            min-width: 180px;
+        }
+        .pixelButton:hover {
+            background-color: var(--electric-blue);
+            color: var(--text-main);
+            border-color: var(--accent-cyan);
+        }
+        .pixelButton:active {
+            background-color: var(--electric-blue);
+            box-shadow: 0 1px var(--accent-cyan);
+            transform: translateY(2px);
+        }
+        .small-button {
+            font-size: 14px;
+            padding: 6px 12px;
+            margin-top: 10px; /* Adjusted margin */
+            min-width: 120px;
+        }
+        .settings-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .settings-group p {
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="uiLayer">
+            <div class="hud">
+                <div id="score" class="hud-item">SCORE: 0</div>
+                <div id="gameModeDisplay" class="hud-item" style="display:none;">MODE: EASY</div>
+                <div id="lives" class="hud-item">LIVES: 3</div>
+            </div>
+            <div id="powerUpStatusContainer">
+                <!-- Power-up status items will be added here by JS -->
+            </div>
+        </div>
+
+        <div id="messageOverlay">
+            <!-- Main Menu View -->
+            <div id="mainMenuView" class="menu-view">
+                <h1>PXL CUBE BREAKER</h1>
+                <p>The ultimate 8-bit cube shattering experience!</p>
+                <p id="highScoreDisplay">HIGH SCORE: 0</p>
+                <button id="mainMenuPlayButton" class="pixelButton">PLAY</button>
+                <button id="mainMenuSettingsButton" class="pixelButton small-button">SETTINGS</button>
+            </div>
+
+            <!-- Difficulty Select View -->
+            <div id="difficultySelectView" class="menu-view">
+                <h1>SELECT MODE</h1>
+                <button class="pixelButton difficulty-button" data-difficulty="easy">EASY MODE</button>
+                <button class="pixelButton difficulty-button" data-difficulty="hard">HARD MODE</button>
+                <button class="pixelButton difficulty-button" data-difficulty="infinity">INFINITY LIVES</button>
+                <button class="pixelButton difficulty-button" data-difficulty="test">TEST ARENA</button>
+                <button id="backToMainFromDifficultyButton" class="pixelButton small-button">MAIN MENU</button>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settingsView" class="menu-view">
+                <h1>SETTINGS</h1>
+                <div class="settings-group">
+                    <button id="toggleMusicButton" class="pixelButton small-button" style="min-width: 150px;">Music: ON</button>
+                </div>
+                <div class="settings-group">
+                    <button id="toggleSfxButton" class="pixelButton small-button" style="min-width: 150px;">SFX: ON</button>
+                </div>
+                <!-- Volume sliders could go here in future -->
+                <button id="backToMainFromSettingsButton" class="pixelButton small-button">BACK TO MAIN</button>
+            </div>
+
+
+            <!-- Game Over View -->
+            <div id="gameOverView" class="menu-view">
+                <h1 id="gameOverTitle">SYSTEM CRASH!</h1>
+                <p id="gameOverMessage">A BOMBER CUBE was hit.<br>Rebooting sequence...</p>
+                <p id="finalScoreDisplay" style="font-size: 24px; color: var(--accent-cyan); margin-bottom:15px;"></p>
+                <button id="playAgainButton" class="pixelButton">RETRY CURRENT</button>
+                <button id="gameOverToDifficultyButton" class="pixelButton small-button">CHANGE MODE</button>
+                <button id="gameOverToMainButton" class="pixelButton small-button">MAIN MENU</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameContainer = document.getElementById('gameContainer');
+
+        const scoreEl = document.getElementById('score');
+        const livesEl = document.getElementById('lives');
+        const gameModeDisplayEl = document.getElementById('gameModeDisplay');
+        const powerUpStatusContainerEl = document.getElementById('powerUpStatusContainer');
+
+        const messageOverlay = document.getElementById('messageOverlay');
+        const mainMenuView = document.getElementById('mainMenuView');
+        const difficultySelectView = document.getElementById('difficultySelectView');
+        const settingsView = document.getElementById('settingsView');
+        const gameOverView = document.getElementById('gameOverView');
+        
+        const highScoreDisplayEl = document.getElementById('highScoreDisplay');
+        const finalScoreDisplayEl = document.getElementById('finalScoreDisplay');
+        const gameOverTitleEl = document.getElementById('gameOverTitle');
+        const gameOverMessageEl = document.getElementById('gameOverMessage');
+
+        const toggleMusicButton = document.getElementById('toggleMusicButton');
+        const toggleSfxButton = document.getElementById('toggleSfxButton');
+
+        // Game settings
+        const GAME_WIDTH = 400;
+        const GAME_HEIGHT = 600;
+        canvas.width = GAME_WIDTH;
+        canvas.height = GAME_HEIGHT;
+        ctx.imageSmoothingEnabled = false;
+
+        const GRAVITY = 0.13;
+        const CUBE_BASE_SIZE = 26;
+        const SHATTER_PARTICLE_COUNT = 18;
+        const BOMB_PARTICLE_COUNT = 45;
+        const POWERUP_PARTICLE_COUNT = 30;
+        const SLICE_TRAIL_LENGTH = 12;
+        const TRAIL_POINT_SIZE = 3;
+
+        let score = 0;
+        let lives = 3;
+        let gameObjects = [];
+        let sliceTrail = [];
+        let particles = [];
+        let stars = [];
+        const NUM_STARS = 60;
+
+        let isSlicing = false;
+        let lastSpawnTime = 0;
+        let gameSpeedMultiplier = 1;
+        let effectiveGameSpeedMultiplier = 1; // Combines base and slow-mo
+        let currentDifficulty = 'easy';
+        let isInfinityLives = false;
+        let highScore = 0;
+
+        // Sound Settings
+        let musicEnabled = true;
+        let sfxEnabled = true;
+
+        const sounds = { // Replace with actual paths to your sound files
+            slice: new Audio('sounds/slice.wav'),
+            bomb: new Audio('sounds/bomb.wav'),
+            powerUpActivate: new Audio('sounds/powerup_activate.wav'),
+            powerUpCollect: new Audio('sounds/powerup_collect.wav'),
+            lifeLost: new Audio('sounds/life_lost.wav'),
+            gameOver: new Audio('sounds/game_over.wav'),
+            uiClick: new Audio('sounds/ui_click.wav'),
+            bgMusic: new Audio('sounds/bg_music.mp3')
+        };
+        sounds.bgMusic.loop = true;
+        Object.values(sounds).forEach(sound => sound.volume = 0.5); // Default volume
+
+
+        // Difficulty specific settings container
+        let difficultySettings = {
+            spawnInterval: 2000, minSpawnInterval: 800, spawnIntervalDecrease: 50,
+            cubeSpeedMultiplier: 1.0, bombChanceBase: 0.15, bombChanceScoreFactor: 2500,
+            initialLives: 3, powerUpChance: 0.10 // 10% chance for a power-up
+        };
+
+        const GAME_STATE = {
+            MAIN_MENU: 'MAIN_MENU',
+            DIFFICULTY_SELECT: 'DIFFICULTY_SELECT',
+            SETTINGS: 'SETTINGS',
+            PLAYING: 'PLAYING',
+            GAME_OVER: 'GAME_OVER'
+        };
+        let currentGameState = GAME_STATE.MAIN_MENU;
+
+        const COLOR_BG_PRIMARY = '#0A0F2C';
+        const COLOR_ACCENT_CYAN = '#00FFFF';
+        const COLOR_ELECTRIC_BLUE = '#00BFFF';
+        const CUBE_BOMB_BODY = '#333344';
+        const CUBE_BOMB_CORE = COLOR_ACCENT_CYAN;
+        const COLOR_DANGER_RED = '#FF1133';
+
+        const POWERUP_DURATION_FRAMES = 300; // Approx 5 seconds at 60FPS
+
+        let activePowerUps = {
+            shield: { active: false, timer: 0, duration: POWERUP_DURATION_FRAMES / 2, color: 'var(--powerup-shield)', symbol: '🛡️' },
+            scoreBoost: { active: false, timer: 0, duration: POWERUP_DURATION_FRAMES, factor: 2, color: 'var(--powerup-score)', symbol: '2x' },
+            slowMo: { active: false, timer: 0, duration: POWERUP_DURATION_FRAMES, factor: 0.5, color: 'var(--powerup-slowmo)', symbol: '⏳' },
+            freeze: { active: false, timer: 0, duration: POWERUP_DURATION_FRAMES * 0.6, color: 'var(--powerup-freeze)', symbol: '❄️' }
+        };
+
+
+        const CUBE_TYPES = [
+            { name: 'magenta_cube', baseColor: 'var(--cube-magenta)', points: 10 },
+            { name: 'yellow_cube', baseColor: 'var(--cube-yellow)', points: 15 },
+            { name: 'lime_cube', baseColor: 'var(--cube-lime)', points: 10 },
+            { name: 'red_cube', baseColor: 'var(--cube-red)', points: 20 },
+            { name: 'orange_cube', baseColor: 'var(--cube-orange)', points: 12 },
+            { name: 'bomber_cube', baseColor: 'var(--cube-bomb-body)', points: -1, isBomb: true, coreColor: 'var(--cube-bomb-core)' },
+            // Power-ups
+            { name: 'life_cube', baseColor: 'var(--powerup-life)', points: 0, isPowerUp: true, powerUpType: 'extraLife', iconSymbol: '♥' },
+            { name: 'shield_cube', baseColor: 'var(--powerup-shield)', points: 0, isPowerUp: true, powerUpType: 'shield', iconSymbol: '🛡️' },
+            { name: 'score_boost_cube', baseColor: 'var(--powerup-score)', points: 0, isPowerUp: true, powerUpType: 'scoreBoost', iconSymbol: '2x' },
+            { name: 'slowmo_cube', baseColor: 'var(--powerup-slowmo)', points: 0, isPowerUp: true, powerUpType: 'slowMo', iconSymbol: '⏳' },
+            { name: 'freeze_cube', baseColor: 'var(--powerup-freeze)', points: 0, isPowerUp: true, powerUpType: 'freeze', iconSymbol: '❄️' }
+        ];
+
+
+        // --- Sound Functions ---
+        function playSfx(soundKey) {
+            if (sfxEnabled && sounds[soundKey]) {
+                sounds[soundKey].currentTime = 0;
+                sounds[soundKey].play().catch(e => console.warn(`SFX ${soundKey} play error:`, e.message));
+            }
+        }
+        function playMusic() {
+            if (musicEnabled && sounds.bgMusic) {
+                sounds.bgMusic.play().catch(e => console.warn("Music play error:", e.message));
+            }
+        }
+        function stopMusic() {
+            if (sounds.bgMusic) {
+                sounds.bgMusic.pause();
+                sounds.bgMusic.currentTime = 0;
+            }
+        }
+        function updateSoundButtonText() {
+            toggleMusicButton.textContent = `Music: ${musicEnabled ? 'ON' : 'OFF'}`;
+            toggleSfxButton.textContent = `SFX: ${sfxEnabled ? 'ON' : 'OFF'}`;
+        }
+        function loadSoundSettings() {
+            musicEnabled = localStorage.getItem('pxlCubeBreakerMusicEnabled') !== 'false'; // true by default
+            sfxEnabled = localStorage.getItem('pxlCubeBreakerSfxEnabled') !== 'false';   // true by default
+            updateSoundButtonText();
+        }
+        function saveSoundSettings() {
+            localStorage.setItem('pxlCubeBreakerMusicEnabled', musicEnabled);
+            localStorage.setItem('pxlCubeBreakerSfxEnabled', sfxEnabled);
+        }
+
+        // --- UI Management ---
+        function showView(viewId) {
+            playSfx('uiClick');
+            messageOverlay.style.display = 'flex';
+            [mainMenuView, difficultySelectView, settingsView, gameOverView].forEach(v => v.classList.remove('active-view'));
+            document.getElementById(viewId).classList.add('active-view');
+            
+            if (viewId === 'mainMenuView') {
+                 gameModeDisplayEl.style.display = 'none';
+                 updateHighScoreDisplay(); // Ensure high score is current
+            } else if (viewId === 'difficultySelectView' || viewId === 'settingsView') {
+                 gameModeDisplayEl.style.display = 'none';
+            }
+            if (viewId === 'settingsView') {
+                updateSoundButtonText();
+            }
+        }
+        function hideOverlay() {
+            messageOverlay.style.display = 'none';
+            if (currentGameState === GAME_STATE.PLAYING) {
+                gameModeDisplayEl.style.display = 'block';
+                gameModeDisplayEl.style.opacity = '1';
+                setTimeout(() => {
+                    if (currentGameState === GAME_STATE.PLAYING) { // Check again in case game ended quickly
+                         gameModeDisplayEl.style.opacity = '0';
+                         setTimeout(() => gameModeDisplayEl.style.display = 'none', 500); // Hide after fade
+                    }
+                }, 2500); // Visible for 2.5s, then fade out for 0.5s
+            }
+        }
+
+        // --- Difficulty Setup ---
+        function setDifficulty(difficulty) {
+            currentDifficulty = difficulty;
+            isInfinityLives = false;
+            let modeText = "MODE: ";
+
+            switch (difficulty) {
+                case 'easy':
+                    difficultySettings = { spawnInterval: 2000, minSpawnInterval: 900, spawnIntervalDecrease: 40, cubeSpeedMultiplier: 0.9, bombChanceBase: 0.12, bombChanceScoreFactor: 3000, initialLives: 3, powerUpChance: 0.12 };
+                    modeText += "EASY"; break;
+                case 'hard':
+                    difficultySettings = { spawnInterval: 1500, minSpawnInterval: 500, spawnIntervalDecrease: 60, cubeSpeedMultiplier: 1.2, bombChanceBase: 0.20, bombChanceScoreFactor: 2000, initialLives: 2, powerUpChance: 0.08 };
+                    modeText += "HARD"; break;
+                case 'infinity':
+                    difficultySettings = { spawnInterval: 1800, minSpawnInterval: 700, spawnIntervalDecrease: 50, cubeSpeedMultiplier: 1.0, bombChanceBase: 0.18, bombChanceScoreFactor: 2200, initialLives: 999, powerUpChance: 0.15 };
+                    isInfinityLives = true; modeText += "INFINITY ∞"; break;
+                case 'test':
+                    difficultySettings = { spawnInterval: 3000, minSpawnInterval: 1500, spawnIntervalDecrease: 20, cubeSpeedMultiplier: 0.7, bombChanceBase: 0.05, bombChanceScoreFactor: 5000, initialLives: 5, powerUpChance: 0.25 }; // Higher powerup chance for testing
+                    modeText += "TEST ARENA"; break;
+            }
+            gameModeDisplayEl.textContent = modeText;
+        }
+
+        // --- Helper Functions ---
+        function getRandom(min, max) { return Math.random() * (max - min) + min; }
+        function shadeColor(color, percent) { /* ... (same as before) ... */ 
+            if (color.startsWith('var(--')) { // Resolve CSS variable
+                color = getComputedStyle(document.documentElement).getPropertyValue(color.slice(4,-1)).trim();
+            }
+            let R = parseInt(color.substring(1,3),16);
+            let G = parseInt(color.substring(3,5),16);
+            let B = parseInt(color.substring(5,7),16);
+            R = parseInt(R * (100 + percent) / 100); G = parseInt(G * (100 + percent) / 100); B = parseInt(B * (100 + percent) / 100);
+            R = (R<255)?R:255;  G = (G<255)?G:255;  B = (B<255)?B:255;
+            R = (R>0)?R:0; G = (G>0)?G:0; B = (B>0)?B:0;
+            const RR = ((R.toString(16).length==1)?"0"+R.toString(16):R.toString(16));
+            const GG = ((G.toString(16).length==1)?"0"+G.toString(16):G.toString(16));
+            const BB = ((B.toString(16).length==1)?"0"+B.toString(16):B.toString(16));
+            return "#"+RR+GG+BB;
+        }
+        function drawPixelRect(x, y, w, h, color) {
+            if (color.startsWith('var(--')) {
+                ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(color.slice(4,-1)).trim();
+            } else {
+                ctx.fillStyle = color;
+            }
+            ctx.fillRect(Math.floor(x), Math.floor(y), Math.floor(w), Math.floor(h));
+        }
+
+        function drawPseudo3DCube(x, y, size, baseColor, rotation, scale, isBomb = false, coreColor = null, iconSymbol = null) {
+            ctx.save();
+            ctx.translate(Math.floor(x), Math.floor(y));
+            ctx.rotate(rotation);
+            ctx.scale(scale, scale); 
+
+            const s = Math.floor(size);
+            const d = Math.floor(s / 3.5); 
+
+            const resolvedBaseColor = baseColor.startsWith('var(--') ? getComputedStyle(document.documentElement).getPropertyValue(baseColor.slice(4,-1)).trim() : baseColor;
+            const colorLight = shadeColor(resolvedBaseColor, 25);
+            const colorDark = shadeColor(resolvedBaseColor, -25);
+
+            drawPixelRect(-s/2, -s/2, s, s, resolvedBaseColor); // Main face
+            
+            // Pseudo-3D shading
+            ctx.fillStyle = colorDark;
+            ctx.beginPath(); ctx.moveTo(s/2, -s/2); ctx.lineTo(s/2+d, -s/2-d); ctx.lineTo(s/2+d, s/2-d); ctx.lineTo(s/2, s/2); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = colorLight;
+            ctx.beginPath(); ctx.moveTo(-s/2, -s/2); ctx.lineTo(-s/2+d, -s/2-d); ctx.lineTo(s/2+d, -s/2-d); ctx.lineTo(s/2, -s/2); ctx.closePath(); ctx.fill();
+            
+            // Re-draw main face on top if not perfectly aligned by shading
+            drawPixelRect(-s / 2, -s / 2, s, s, resolvedBaseColor);
+            
+            if (isBomb && coreColor) {
+                const resolvedCoreColor = coreColor.startsWith('var(--') ? getComputedStyle(document.documentElement).getPropertyValue(coreColor.slice(4,-1)).trim() : coreColor;
+                const coreSize = Math.floor(s / 2.8);
+                const pulse = Math.sin(performance.now() / 180) * (coreSize / 8);
+                const currentCoreSize = Math.max(2, coreSize + pulse);
+                drawPixelRect(-currentCoreSize/2, -currentCoreSize/2, currentCoreSize, currentCoreSize, resolvedCoreColor);
+                ctx.fillStyle = shadeColor(resolvedCoreColor, 60);
+                ctx.globalAlpha = 0.4 * (0.75 + Math.sin(performance.now() / 180) * 0.25);
+                drawPixelRect(-currentCoreSize/2 -1, -currentCoreSize/2 -1, currentCoreSize+2, currentCoreSize+2, ctx.fillStyle);
+                ctx.globalAlpha = 1;
+            } else if (iconSymbol) { // Draw power-up icon
+                ctx.font = `${Math.floor(s * 0.6)}px PixelFont`;
+                ctx.fillStyle = shadeColor(resolvedBaseColor, -60); // Darker or contrasting icon
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(iconSymbol, 0, s * 0.05); // Slight Y offset for better centering
+            }
+            ctx.restore();
+        }
+        
+        function formatScore(num) {
+            if (num < 1000) return num.toString();
+            const suffixes = ["", "K", "M", "B", "T"]; 
+            const i = Math.floor(Math.log10(Math.abs(num)) / 3);
+            if (i >= suffixes.length) return num.toExponential(1); // Fallback for very large numbers
+            const shortNum = (num / Math.pow(1000, i));
+            return (i > 0 ? shortNum.toFixed(shortNum < 10 && shortNum % 1 !== 0 ? 1 : 0) : shortNum.toString()) + suffixes[i];
+        }
+
+        // --- Screen Shake ---
+        let shakeIntensity = 0;
+        let shakeDuration = 0;
+        function triggerScreenShake(intensity, duration) { shakeIntensity = intensity; shakeDuration = duration; }
+        function applyScreenShake() {
+            if (shakeDuration > 0) {
+                const dx = getRandom(-shakeIntensity, shakeIntensity);
+                const dy = getRandom(-shakeIntensity, shakeIntensity);
+                gameContainer.style.transform = `translate(${dx}px, ${dy}px)`;
+                shakeDuration--;
+            } else {
+                gameContainer.style.transform = 'translate(0,0)';
+            }
+        }
+
+        // --- Cube Object ---
+        class CubeObject {
+            constructor(type) {
+                this.type = type;
+                this.size = CUBE_BASE_SIZE * (0.9 + Math.random() * 0.2);
+                this.x = getRandom(this.size, canvas.width - this.size);
+                this.y = canvas.height + this.size;
+                this.vx = getRandom(-1.5, 1.5) * difficultySettings.cubeSpeedMultiplier * effectiveGameSpeedMultiplier;
+                this.vy = getRandom(-10, -7.5) * difficultySettings.cubeSpeedMultiplier * effectiveGameSpeedMultiplier;
+                this.rotation = getRandom(0, Math.PI * 2);
+                this.rotationSpeed = getRandom(-0.03, 0.03) * effectiveGameSpeedMultiplier;
+                this.shattered = false;
+                this.isBomb = type.isBomb || false;
+                this.isPowerUp = type.isPowerUp || false;
+                this.offScreen = false;
+                this.spawnScale = 0.1; 
+                this.spawnAnimDuration = 15; 
+                this.spawnAnimTimer = this.spawnAnimDuration;
+            }
+
+            update() {
+                if (activePowerUps.freeze.active && !this.isPowerUp) return; // Freeze normal cubes
+
+                if (this.spawnAnimTimer > 0) {
+                    this.spawnScale = 1 - (this.spawnAnimTimer / this.spawnAnimDuration) * 0.9; 
+                    this.spawnAnimTimer--;
+                } else {
+                    this.spawnScale = 1;
+                }
+
+                if (!this.shattered) {
+                    this.x += this.vx * effectiveGameSpeedMultiplier;
+                    this.y += this.vy * effectiveGameSpeedMultiplier;
+                    this.vy += GRAVITY * effectiveGameSpeedMultiplier;
+                    this.rotation += this.rotationSpeed * effectiveGameSpeedMultiplier;
+
+                    if (this.x - this.size/2 < 0 || this.x + this.size/2 > canvas.width) { this.vx *= -0.7; this.x = Math.max(this.size/2, Math.min(this.x, canvas.width - this.size/2)); }
+                    if (this.y - this.size > canvas.height + this.size * 2) { // Increased buffer
+                        this.offScreen = true;
+                        if (!this.isBomb && !this.isPowerUp && currentGameState === GAME_STATE.PLAYING && !this.shattered) {
+                            loseLife();
+                        }
+                    }
+                } else { this.offScreen = true; }
+            }
+
+            draw() {
+                if (!this.shattered) {
+                    drawPseudo3DCube(this.x, this.y, this.size, this.type.baseColor, this.rotation, this.spawnScale, this.isBomb, this.type.coreColor, this.type.iconSymbol);
+                }
+            }
+
+            shatter() {
+                if (this.shattered || this.spawnAnimTimer > 0) return;
+                this.shattered = true;
+
+                if (this.isBomb) {
+                    playSfx('bomb');
+                    triggerBombExplosion(this.x, this.y, this.type.coreColor);
+                    if (activePowerUps.shield.active) {
+                        activePowerUps.shield.active = false; // Shield absorbs the bomb
+                        // Add visual for shield break
+                    } else {
+                        gameOver("BOMBER CUBE HIT!");
+                    }
+                    return;
+                }
+                
+                if (this.isPowerUp) {
+                    playSfx('powerUpCollect');
+                    activatePowerUp(this.type.powerUpType, this.x, this.y, this.type.baseColor);
+                    return; // No standard points/particles for powerups
+                }
+
+                playSfx('slice');
+                let pointsEarned = this.type.points;
+                if (activePowerUps.scoreBoost.active) {
+                    pointsEarned *= activePowerUps.scoreBoost.factor;
+                }
+                score += pointsEarned;
+                updateScoreDisplay();
+                createShatterParticles(this.x, this.y, this.type.baseColor, this.size);
+            }
+        }
+
+        // --- Particle System ---
+        class Particle {
+            constructor(x, y, color, baseSize, isExplosion = false, isPowerUpEffect = false) {
+                this.x = x; this.y = y;
+                this.size = isExplosion ? getRandom(2, 7) : (isPowerUpEffect ? getRandom(3,8) : getRandom(Math.max(2, baseSize / 7), Math.max(3, baseSize / 4)));
+                
+                if (color.startsWith('var(--')) {
+                     this.color = getComputedStyle(document.documentElement).getPropertyValue(color.slice(4,-1)).trim();
+                } else {
+                    this.color = color;
+                }
+                if (isExplosion) this.color = Math.random() > 0.3 ? COLOR_ACCENT_CYAN : COLOR_ELECTRIC_BLUE;
+
+                this.vx = getRandom(-3.5, 3.5) * (isExplosion ? 1.6 : (isPowerUpEffect ? 1.3 : 1.1));
+                this.vy = getRandom(-4.5, 1.5) * (isExplosion ? 1.6 : (isPowerUpEffect ? -2 : 1.1)); // Powerups go up more
+                this.life = isExplosion ? getRandom(45, 75) : (isPowerUpEffect ? getRandom(40,60) : getRandom(30, 55));
+                this.alpha = 1; 
+                this.isSpecialParticle = isExplosion || isPowerUpEffect;
+            }
+            update() { this.x += this.vx * effectiveGameSpeedMultiplier; this.y += this.vy * effectiveGameSpeedMultiplier; this.vy += GRAVITY * 0.7 * effectiveGameSpeedMultiplier; this.life--; this.alpha = this.life / (this.isSpecialParticle ? 50 : 35); }
+            draw() { ctx.globalAlpha = Math.max(0, this.alpha); drawPixelRect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size, this.color); ctx.globalAlpha = 1; }
+        }
+
+        function createShatterParticles(x,y,color,cubeSize) { for (let i=0; i<SHATTER_PARTICLE_COUNT; i++) particles.push(new Particle(x,y,color,cubeSize)); }
+        function createPowerUpParticles(x,y,color) { for (let i=0; i<POWERUP_PARTICLE_COUNT; i++) particles.push(new Particle(x,y,color,0,false,true)); }
+        function triggerBombExplosion(x,y,coreColor) {
+            triggerScreenShake(8, 15); 
+            for (let i=0; i<BOMB_PARTICLE_COUNT; i++) {
+                const pCol = Math.random() > 0.5 ? coreColor : (Math.random() > 0.5 ? COLOR_ACCENT_CYAN : COLOR_ELECTRIC_BLUE);
+                particles.push(new Particle(x,y,pCol,0,true));
+            }
+        }
+        
+        // --- Starfield ---
+        function initStars() {
+            stars = [];
+            for (let i = 0; i < NUM_STARS; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() > 0.6 ? 2 : 1,
+                    speed: (0.1 + Math.random() * 0.3) * (isInfinityLives ? 1.5 : 1) 
+                });
+            }
+        }
+        function drawAndUpdateStars() {
+            stars.forEach(star => {
+                star.y += star.speed * effectiveGameSpeedMultiplier; // Use effective speed
+                if (star.y > canvas.height) { star.y = 0; star.x = Math.random() * canvas.width; }
+                const starColor = Math.random() > 0.3 ? COLOR_ACCENT_CYAN : '#FFFFFF';
+                drawPixelRect(star.x, star.y, star.size, star.size, starColor);
+            });
+        }
+
+        // --- Spawning Logic ---
+        function spawnObject() {
+            let type;
+            if (Math.random() < difficultySettings.powerUpChance) {
+                const powerUpTypes = CUBE_TYPES.filter(ct => ct.isPowerUp);
+                if (powerUpTypes.length > 0) {
+                    type = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+                } else { // Fallback
+                     type = CUBE_TYPES.find(ct => !ct.isBomb && !ct.isPowerUp) || CUBE_TYPES[0];
+                }
+            } else {
+                const regularCubeTypes = CUBE_TYPES.filter(ct => !ct.isPowerUp);
+                const randomTypeIndex = Math.floor(Math.random() * regularCubeTypes.length);
+                type = regularCubeTypes[randomTypeIndex];
+                
+                const bombChance = difficultySettings.bombChanceBase + (score / difficultySettings.bombChanceScoreFactor);
+                if (type.isBomb && Math.random() > bombChance) {
+                    const nonBombTypes = regularCubeTypes.filter(ct => !ct.isBomb);
+                    type = nonBombTypes[Math.floor(Math.random() * nonBombTypes.length)];
+                }
+            }
+            gameObjects.push(new CubeObject(type));
+        }
+
+        // --- Power-up Logic ---
+        function activatePowerUp(type, x, y, color) {
+            playSfx('powerUpActivate');
+            createPowerUpParticles(x, y, color);
+
+            switch (type) {
+                case 'extraLife':
+                    if (!isInfinityLives) lives++;
+                    updateLivesDisplay();
+                    // TODO: Maybe floating text "+1 Life"
+                    break;
+                case 'shield':
+                    activePowerUps.shield.active = true;
+                    activePowerUps.shield.timer = activePowerUps.shield.duration;
+                    break;
+                case 'scoreBoost':
+                    activePowerUps.scoreBoost.active = true;
+                    activePowerUps.scoreBoost.timer = activePowerUps.scoreBoost.duration;
+                    break;
+                case 'slowMo':
+                    activePowerUps.slowMo.active = true;
+                    activePowerUps.slowMo.timer = activePowerUps.slowMo.duration;
+                    break;
+                case 'freeze':
+                    activePowerUps.freeze.active = true;
+                    activePowerUps.freeze.timer = activePowerUps.freeze.duration;
+                    break;
+            }
+            updatePowerUpStatusDisplay();
+        }
+
+        function updateActivePowerUps() {
+            let changed = false;
+            effectiveGameSpeedMultiplier = gameSpeedMultiplier; // Base game speed
+
+            if (activePowerUps.slowMo.active) {
+                activePowerUps.slowMo.timer--;
+                effectiveGameSpeedMultiplier *= activePowerUps.slowMo.factor;
+                if (activePowerUps.slowMo.timer <= 0) {
+                    activePowerUps.slowMo.active = false;
+                    changed = true;
+                }
+            }
+            if (activePowerUps.scoreBoost.active) {
+                activePowerUps.scoreBoost.timer--;
+                if (activePowerUps.scoreBoost.timer <= 0) {
+                    activePowerUps.scoreBoost.active = false;
+                    changed = true;
+                }
+            }
+            if (activePowerUps.shield.active) {
+                activePowerUps.shield.timer--;
+                if (activePowerUps.shield.timer <= 0) {
+                    activePowerUps.shield.active = false;
+                    changed = true;
+                }
+            }
+            if (activePowerUps.freeze.active) {
+                activePowerUps.freeze.timer--;
+                if (activePowerUps.freeze.timer <= 0) {
+                    activePowerUps.freeze.active = false;
+                    changed = true;
+                }
+            }
+            if (changed) updatePowerUpStatusDisplay();
+        }
+        
+        function updatePowerUpStatusDisplay() {
+            powerUpStatusContainerEl.innerHTML = '';
+            for (const key in activePowerUps) {
+                const pu = activePowerUps[key];
+                if (pu.active) {
+                    const item = document.createElement('div');
+                    item.classList.add('powerup-status-item');
+                    item.style.backgroundColor = pu.color.startsWith('var') ? getComputedStyle(document.documentElement).getPropertyValue(pu.color.slice(4,-1)).trim() + '99' : pu.color + '99'; // Add alpha
+                    item.style.borderColor = pu.color.startsWith('var') ? getComputedStyle(document.documentElement).getPropertyValue(pu.color.slice(4,-1)).trim() : pu.color;
+                    item.style.border = `1px solid ${item.style.borderColor}`;
+                    const secondsLeft = Math.ceil(pu.timer / 60); // Approximate seconds
+                    item.textContent = `${pu.symbol} ${secondsLeft}s`;
+                    powerUpStatusContainerEl.appendChild(item);
+                }
+            }
+        }
+        function resetPowerUps() {
+             for (const key in activePowerUps) {
+                activePowerUps[key].active = false;
+                activePowerUps[key].timer = 0;
+            }
+            updatePowerUpStatusDisplay();
+        }
+
+        // --- Hit Detection ---
+        function checkHit(mouseX, mouseY) {
+            for (let i = gameObjects.length - 1; i >= 0; i--) {
+                const obj = gameObjects[i];
+                if (!obj.shattered && obj.spawnAnimTimer <=0) { 
+                    const dist = Math.hypot(mouseX - obj.x, mouseY - obj.y);
+                    if (dist < obj.size / 1.7) { // Generous hit detection
+                        obj.shatter(); return; 
+                    }
+                }
+            }
+        }
+
+        // --- Game State Management ---
+        function startGame() {
+            playSfx('uiClick');
+            score = 0;
+            lives = isInfinityLives ? 999 : difficultySettings.initialLives; 
+            gameObjects = []; particles = []; sliceTrail = [];
+            lastSpawnTime = performance.now();
+            gameSpeedMultiplier = 1; 
+            currentSpawnInterval = difficultySettings.spawnInterval;
+            
+            resetPowerUps();
+            updateScoreDisplay();
+            updateLivesDisplay();
+            currentGameState = GAME_STATE.PLAYING;
+            hideOverlay();
+            initStars(); 
+            if (musicEnabled) playMusic(); else stopMusic();
+            if (!animationFrameId) loop(); 
+        }
+
+        function gameOver(reason = "A BOMBER CUBE was hit.") {
+            playSfx('gameOver');
+            stopMusic();
+            triggerScreenShake(5, 10);
+            currentGameState = GAME_STATE.GAME_OVER;
+            gameOverTitleEl.textContent = reason === "NO LIVES LEFT!" ? "SYSTEM OFFLINE" : "SYSTEM CRASH!";
+            gameOverMessageEl.innerHTML = `${reason}<br>Rebooting sequence...`;
+            saveHighScore(score);
+            finalScoreDisplayEl.textContent = `FINAL SCORE: ${formatScore(score)}`;
+            showView('gameOverView');
+        }
+
+        function loseLife() {
+            if (currentGameState !== GAME_STATE.PLAYING || isInfinityLives) return;
+            
+            if (activePowerUps.shield.active) {
+                activePowerUps.shield.active = false; // Shield absorbs the life loss
+                activePowerUps.shield.timer = 0;
+                updatePowerUpStatusDisplay();
+                playSfx('powerUpActivate'); // Or a specific shield break sound
+                // Visual effect for shield breaking
+                createPowerUpParticles(GAME_WIDTH/2, GAME_HEIGHT - 50, activePowerUps.shield.color);
+                return;
+            }
+
+            playSfx('lifeLost');
+            lives--;
+            triggerScreenShake(4, 8);
+            gameContainer.style.borderColor = COLOR_DANGER_RED;
+            setTimeout(() => gameContainer.style.borderColor = COLOR_ELECTRIC_BLUE, 150);
+            updateLivesDisplay();
+            if (lives <= 0) {
+                gameOver("NO LIVES LEFT!");
+            }
+        }
+
+        function updateScoreDisplay() { scoreEl.textContent = `SCORE: ${formatScore(score)}`; }
+        function updateLivesDisplay() { livesEl.textContent = `LIVES: ${isInfinityLives ? '∞' : lives}`; }
+        function loadHighScore() {
+            const storedHighScore = localStorage.getItem('pxlCubeBreakerHighScore');
+            highScore = storedHighScore ? parseInt(storedHighScore, 10) : 0;
+        }
+        function saveHighScore(currentScore) {
+            if (currentScore > highScore) {
+                highScore = currentScore;
+                localStorage.setItem('pxlCubeBreakerHighScore', highScore.toString());
+            }
+        }
+        function updateHighScoreDisplay() {
+            highScoreDisplayEl.textContent = `HIGH SCORE: ${formatScore(highScore)}`;
+        }
+
+
+        // --- Input Handling ---
+        function getInteractionPos(event) { /* ... (same as before) ... */ 
+            const rect = canvas.getBoundingClientRect(); let x,y;
+            if (event.touches && event.touches.length > 0) { x = event.touches[0].clientX - rect.left; y = event.touches[0].clientY - rect.top; }
+            else { x = event.clientX - rect.left; y = event.clientY - rect.top; }
+            return {x,y};
+        }
+        function handleInteractionStart(e) { if (currentGameState !== GAME_STATE.PLAYING) return; e.preventDefault(); isSlicing = true; sliceTrail = []; const pos = getInteractionPos(e); sliceTrail.push(pos); checkHit(pos.x, pos.y); }
+        function handleInteractionMove(e) { if (currentGameState !== GAME_STATE.PLAYING || !isSlicing) return; e.preventDefault(); const pos = getInteractionPos(e); sliceTrail.push(pos); if (sliceTrail.length > 1) checkHit(pos.x, pos.y); while (sliceTrail.length > SLICE_TRAIL_LENGTH) sliceTrail.shift(); }
+        function handleInteractionEnd(e) { if (currentGameState !== GAME_STATE.PLAYING) return; e.preventDefault(); isSlicing = false; }
+
+        canvas.addEventListener('mousedown', handleInteractionStart);
+        canvas.addEventListener('mousemove', handleInteractionMove);
+        canvas.addEventListener('mouseup', handleInteractionEnd);
+        canvas.addEventListener('mouseleave', handleInteractionEnd);
+        canvas.addEventListener('touchstart', handleInteractionStart, { passive: false });
+        canvas.addEventListener('touchmove', handleInteractionMove, { passive: false });
+        canvas.addEventListener('touchend', handleInteractionEnd);
+        canvas.addEventListener('touchcancel', handleInteractionEnd);
+
+        // Menu Button Event Listeners
+        document.getElementById('mainMenuPlayButton').addEventListener('click', () => {
+            currentGameState = GAME_STATE.DIFFICULTY_SELECT;
+            showView('difficultySelectView');
+        });
+        document.getElementById('mainMenuSettingsButton').addEventListener('click', () => {
+            currentGameState = GAME_STATE.SETTINGS;
+            showView('settingsView');
+        });
+
+        document.querySelectorAll('.difficulty-button').forEach(button => {
+            button.addEventListener('click', () => {
+                setDifficulty(button.dataset.difficulty);
+                startGame();
+            });
+        });
+        
+        document.getElementById('backToMainFromDifficultyButton').addEventListener('click', () => { // Changed ID
+            currentGameState = GAME_STATE.MAIN_MENU;
+            showView('mainMenuView');
+        });
+        document.getElementById('backToMainFromSettingsButton').addEventListener('click', () => {
+            currentGameState = GAME_STATE.MAIN_MENU;
+            showView('mainMenuView');
+        });
+
+        document.getElementById('playAgainButton').addEventListener('click', () => {
+            startGame();
+        });
+        document.getElementById('gameOverToDifficultyButton').addEventListener('click', () => {
+            currentGameState = GAME_STATE.DIFFICULTY_SELECT;
+            showView('difficultySelectView');
+        });
+        document.getElementById('gameOverToMainButton').addEventListener('click', () => {
+            currentGameState = GAME_STATE.MAIN_MENU;
+            showView('mainMenuView');
+        });
+
+        // Sound Settings Buttons
+        toggleMusicButton.addEventListener('click', () => {
+            musicEnabled = !musicEnabled;
+            saveSoundSettings();
+            updateSoundButtonText();
+            if (musicEnabled && (currentGameState === GAME_STATE.PLAYING || messageOverlay.style.display !== 'flex')) { // Start music if game playing or menu not obstructive
+                playMusic();
+            } else {
+                stopMusic();
+            }
+            playSfx('uiClick');
+        });
+        toggleSfxButton.addEventListener('click', () => {
+            sfxEnabled = !sfxEnabled;
+            saveSoundSettings();
+            updateSoundButtonText();
+            playSfx('uiClick'); // This will play if SFX was just enabled, or if it was already enabled.
+        });
+
+        // --- Main Game Loop ---
+        let lastFrameTime = 0;
+        let animationFrameId;
+        let currentSpawnInterval = difficultySettings.spawnInterval; 
+
+        function loop(timestamp) {
+            animationFrameId = requestAnimationFrame(loop); 
+            const deltaTime = timestamp - lastFrameTime;
+            lastFrameTime = timestamp;
+
+            applyScreenShake(); 
+
+            if (currentGameState !== GAME_STATE.PLAYING) {
+                if (messageOverlay.style.display === 'flex') {
+                    ctx.fillStyle = '#000000'; 
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    drawAndUpdateStars(); 
+                }
+                return; 
+            }
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            drawAndUpdateStars();
+            
+            updateActivePowerUps(); // Update timers and effects
+
+            // Dynamic difficulty ramp-up (score based for interval, time based for speed)
+            if (score > 0 && score % 100 === 0) { // Check every 100 points
+                 if (currentSpawnInterval > difficultySettings.minSpawnInterval) {
+                    currentSpawnInterval = Math.max(difficultySettings.minSpawnInterval, currentSpawnInterval - (difficultySettings.spawnIntervalDecrease / 2)); // Slower decrease
+                 }
+            }
+            // Time-based game speed increase (subtler)
+            if (gameSpeedMultiplier < 1.4) gameSpeedMultiplier += 0.0001;
+
+
+            if (timestamp - lastSpawnTime > currentSpawnInterval / effectiveGameSpeedMultiplier) { // Spawn rate affected by slowmo
+                spawnObject();
+                if (score > 250 && Math.random() < 0.15 + (score / 3000)) spawnObject(); 
+                lastSpawnTime = timestamp;
+            }
+
+            gameObjects = gameObjects.filter(obj => { obj.update(); obj.draw(); return !obj.offScreen; });
+            particles = particles.filter(p => { p.update(); p.draw(); return p.life > 0; });
+
+            if (sliceTrail.length > 0) { 
+                for (let i = 0; i < sliceTrail.length; i++) {
+                    const alpha = (i / sliceTrail.length) * 0.6 + 0.4;
+                    ctx.globalAlpha = alpha;
+                    drawPixelRect(sliceTrail[i].x - TRAIL_POINT_SIZE/2, sliceTrail[i].y - TRAIL_POINT_SIZE/2, TRAIL_POINT_SIZE, TRAIL_POINT_SIZE, COLOR_ACCENT_CYAN);
+                }
+                ctx.globalAlpha = 1;
+                if (!isSlicing && sliceTrail.length > 0) sliceTrail.shift();
+            }
+        }
+
+        // Initial Setup
+        loadHighScore();
+        loadSoundSettings();
+        setDifficulty('easy'); 
+        currentGameState = GAME_STATE.MAIN_MENU;
+        showView('mainMenuView');
+        initStars(); 
+        loop(); 
+
+    </script>
+</body>
+</html>
