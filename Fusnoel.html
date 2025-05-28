@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-h">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Fusnoel 8-Bit Adventure</title>
+    <title>Fusnoel Pro Adventure</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
@@ -15,80 +15,211 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background-color: #2c3e50; /* Dark blue night sky */
+            background-color: #1a2533; /* Even darker blue */
             font-family: 'Press Start 2P', cursive;
-            color: #ecf0f1; /* Light text */
-            overflow: hidden; /* Prevent scrollbars */
-            touch-action: manipulation; /* Prevent double-tap zoom on mobile */
+            color: #ecf0f1;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        #gameContainer {
+            position: relative; /* For overlay positioning */
+            border: 4px solid #ecf0f1;
+            box-shadow: 0 0 25px rgba(236, 240, 241, 0.6);
         }
 
         #gameCanvas {
-            border: 4px solid #ecf0f1;
-            background-color: #3498db; /* Brighter blue for game area */
-            box-shadow: 0 0 20px rgba(236, 240, 241, 0.5);
-            display: block; /* Remove extra space below canvas */
+            display: block;
+            background-color: #3498db; /* Game area sky */
         }
 
-        #mobileControls {
-            display: none; /* Hidden by default, shown via JS for touch devices */
-            margin-top: 15px;
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 400px; /* Match typical canvas width */
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #ecf0f1;
+            z-index: 10;
+        }
+
+        .overlay h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #e74c3c; /* Festive Red */
+        }
+        .overlay h2 {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+        .overlay p {
+            font-size: 12px;
+            line-height: 1.6;
+            max-width: 80%;
+            margin-bottom: 20px;
+        }
+        .overlay button, .menu-button {
+            background-color: #2ecc71; /* Festive Green */
+            color: white;
+            border: 2px solid #27ae60;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-family: 'Press Start 2P', cursive;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 3px #27ae60;
+            margin: 8px;
+            min-width: 180px;
+            text-align: center;
+        }
+        .overlay button:active, .menu-button:active {
+            background-color: #27ae60;
+            box-shadow: 0 1px #27ae60;
+            transform: translateY(2px);
+        }
+        .menu-button.secondary {
+            background-color: #3498db; /* Blue */
+            border-color: #2980b9;
+            box-shadow: 0 3px #2980b9;
+        }
+        .menu-button.secondary:active {
+            background-color: #2980b9;
+            box-shadow: 0 1px #2980b9;
+        }
+
+
+        #uiLayer {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 400px; /* Match canvas width */
+            padding: 5px 0;
+            font-size: 1em;
+            color: #f1c40f; /* Gold */
+        }
+        #scoreBoard, #livesBoard, #highScoreDisplayMainMenu {
+             margin: 5px 10px;
+        }
+        #highScoreDisplayMainMenu {
+            font-size: 0.9em;
+            color: #bdc3c7; /* Silver */
+        }
+
+
+        #mobileControls {
+            margin-top: 10px;
+            width: 100%;
+            max-width: 400px;
             display: flex;
             justify-content: space-around;
         }
 
         .control-button {
-            background-color: #e74c3c; /* Festive red */
+            background-color: #e74c3c;
             color: white;
-            border: 2px solid #c0392b; /* Darker red border */
-            padding: 15px 25px;
-            font-size: 20px;
+            border: 2px solid #c0392b;
+            padding: 15px 20px;
+            font-size: 18px;
             font-family: 'Press Start 2P', cursive;
             cursor: pointer;
-            user-select: none; /* Prevent text selection */
+            user-select: none;
             border-radius: 8px;
             box-shadow: 0 4px #c0392b;
+            flex-grow: 1;
+            margin: 0 5px;
         }
-
         .control-button:active {
             background-color: #c0392b;
             box-shadow: 0 2px #c0392b;
             transform: translateY(2px);
         }
-        
-        #scoreBoard {
-            margin-top: 10px;
-            font-size: 1.2em;
-            color: #f1c40f; /* Gold color for score */
+        .hidden {
+            display: none !important;
         }
-
-        /* Make mobile controls visible if touch is likely */
-        @media (hover: none) and (pointer: coarse) {
-            #mobileControls {
-                display: flex;
-            }
-        }
-        /* Alternative for JS detection based visibility */
-        .mobile-controls-visible {
-            display: flex !important;
-        }
-
     </style>
 </head>
 <body>
+    <div id="uiLayer">
+        <div id="scoreBoard">Score: 0</div>
+        <div id="livesBoard">Lives: 3</div>
+    </div>
 
-    <div id="scoreBoard">Score: 0</div>
-    <canvas id="gameCanvas"></canvas>
-    <div id="mobileControls">
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="mainMenu" class="overlay">
+            <h1>Fusnoel Pro!</h1>
+            <button id="startGameBtn" class="menu-button">Start Game</button>
+            <button id="difficultyBtn" class="menu-button secondary">Difficulty: Medium</button>
+            <button id="instructionsBtn" class="menu-button secondary">Instructions</button>
+            <div id="highScoreDisplayMainMenu">High Score: 0</div>
+        </div>
+
+        <div id="instructionsOverlay" class="overlay hidden">
+            <h2>Instructions</h2>
+            <p>Move Santa (Left/Right or Touch) to catch falling GIFTS!</p>
+            <p>Avoid the nasty COAL lumps.</p>
+            <p>Collect SHIELDS for temporary protection.</p>
+            <p>Press 'P' to Pause/Resume.</p>
+            <button id="backToMenuBtn" class="menu-button">Back to Menu</button>
+        </div>
+
+        <div id="pauseOverlay" class="overlay hidden">
+            <h1>Paused</h1>
+            <button id="resumeGameBtn" class="menu-button">Resume</button>
+            <button id="quitToMenuBtn" class="menu-button secondary">Quit to Menu</button>
+        </div>
+
+        <div id="gameOverOverlay" class="overlay hidden">
+            <h1>Game Over!</h1>
+            <h2 id="finalScoreDisplay">Final Score: 0</h2>
+            <h2 id="highScoreDisplayGameOver">High Score: 0</h2>
+            <button id="retryBtn" class="menu-button">Retry</button>
+            <button id="gameOverToMenuBtn" class="menu-button secondary">Main Menu</button>
+        </div>
+    </div>
+
+    <div id="mobileControls" class="hidden">
         <button id="leftButton" class="control-button">LEFT</button>
+        <button id="pauseButtonMobile" class="control-button" style="background-color: #f39c12; border-color: #e67e22; box-shadow: 0 4px #e67e22;">PAUSE</button>
         <button id="rightButton" class="control-button">RIGHT</button>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        
+        // UI Elements
         const scoreBoard = document.getElementById('scoreBoard');
+        const livesBoard = document.getElementById('livesBoard');
+        const mainMenu = document.getElementById('mainMenu');
+        const instructionsOverlay = document.getElementById('instructionsOverlay');
+        const pauseOverlay = document.getElementById('pauseOverlay');
+        const gameOverOverlay = document.getElementById('gameOverOverlay');
+        const finalScoreDisplay = document.getElementById('finalScoreDisplay');
+        const highScoreDisplayGameOver = document.getElementById('highScoreDisplayGameOver');
+        const highScoreDisplayMainMenu = document.getElementById('highScoreDisplayMainMenu');
+        const mobileControlsDiv = document.getElementById('mobileControls');
+
+        // Buttons
+        const startGameBtn = document.getElementById('startGameBtn');
+        const difficultyBtn = document.getElementById('difficultyBtn');
+        const instructionsBtn = document.getElementById('instructionsBtn');
+        const backToMenuBtn = document.getElementById('backToMenuBtn');
+        const resumeGameBtn = document.getElementById('resumeGameBtn');
+        const quitToMenuBtn = document.getElementById('quitToMenuBtn');
+        const retryBtn = document.getElementById('retryBtn');
+        const gameOverToMenuBtn = document.getElementById('gameOverToMenuBtn');
+        const leftButton = document.getElementById('leftButton');
+        const rightButton = document.getElementById('rightButton');
+        const pauseButtonMobile = document.getElementById('pauseButtonMobile');
+
 
         // Game settings
         let canvasWidth = 400;
@@ -97,109 +228,180 @@
         canvas.height = canvasHeight;
         
         const playerWidth = 40;
-        const playerHeight = 50; // Taller for Santa
-        const playerSpeed = 15; // Faster movement
-        const itemSize = 24; // Gifts and coal size
-        const itemFallSpeedBase = 2;
-        let itemFallSpeedMultiplier = 1;
-        const spawnIntervalBase = 1200; // milliseconds
-        let spawnInterval = spawnIntervalBase;
+        const playerHeight = 50;
+        const playerBaseSpeed = 12; // Slightly slower base
+        let playerSpeed = playerBaseSpeed; // Actual speed, can be affected by powerups
+        const itemSize = 24;
+        
+        let baseItemFallSpeed = 2;
+        let baseSpawnInterval = 1200; // ms
 
         let player = {
             x: canvasWidth / 2 - playerWidth / 2,
-            y: canvasHeight - playerHeight - 10,
+            y: canvasHeight - playerHeight - 15, // A bit higher from bottom
             width: playerWidth,
             height: playerHeight,
-            dx: 0 // horizontal speed
+            dx: 0,
+            lives: 3,
+            hasShield: false,
+            shieldTimer: 0
         };
 
-        let items = []; // {x, y, type: 'gift' | 'coal'}
+        let items = []; // {x, y, type: 'gift' | 'coal' | 'shield'}
         let score = 0;
-        let gameState = 'start'; // 'start', 'playing', 'gameOver'
+        let highScore = 0;
+        let gameState = 'menu'; // 'menu', 'playing', 'paused', 'gameOver', 'instructions'
+        let difficultyLevels = ['Easy', 'Medium', 'Hard'];
+        let currentDifficultyIndex = 1; // Medium
+        
+        let itemFallSpeedMultiplier = 1;
+        let currentSpawnInterval = baseSpawnInterval;
         let lastSpawnTime = 0;
         let animationFrameId;
 
         // --- PIXEL ART DRAWING FUNCTIONS ---
-        // Santa Claus (Simplified)
-        function drawPlayer(x, y, width, height) {
-            // Hat
+        function drawPlayer(p) {
+            // Body
             ctx.fillStyle = '#c0392b'; // Red
-            ctx.fillRect(x + width * 0.2, y, width * 0.6, height * 0.3); // Main hat
-            ctx.fillStyle = '#ecf0f1'; // White
-            ctx.fillRect(x + width * 0.1, y + height * 0.25, width * 0.8, height * 0.1); // Hat brim
-            ctx.fillRect(x + width * 0.7, y - height * 0.05, width * 0.2, height * 0.15); // Hat pompom base
+            ctx.fillRect(p.x, p.y + p.height * 0.6, p.width, p.height * 0.4);
+            
+            // Belt
+            ctx.fillStyle = '#2c3e50'; // Black
+            ctx.fillRect(p.x, p.y + p.height * 0.7, p.width, p.height * 0.1);
+            ctx.fillStyle = '#f1c40f'; // Gold buckle
+            ctx.fillRect(p.x + p.width * 0.4, p.y + p.height * 0.7, p.width * 0.2, p.height * 0.1);
 
             // Face
-            ctx.fillStyle = '#f39c12'; // Skin tone (orangey for pixel feel)
-            ctx.fillRect(x + width * 0.25, y + height * 0.3, width * 0.5, height * 0.2);
+            ctx.fillStyle = '#f39c12'; // Skin tone
+            ctx.fillRect(p.x + p.width * 0.25, p.y + p.height * 0.3, p.width * 0.5, p.height * 0.2);
 
             // Beard
             ctx.fillStyle = '#ecf0f1'; // White
-            ctx.fillRect(x + width * 0.15, y + height * 0.45, width * 0.7, height * 0.25); // Main beard
-            ctx.fillRect(x + width * 0.3, y + height * 0.4, width * 0.4, height * 0.1); // Moustache part
+            ctx.fillRect(p.x + p.width * 0.15, p.y + p.height * 0.45, p.width * 0.7, p.height * 0.25);
+            ctx.fillRect(p.x + p.width * 0.3, p.y + p.height * 0.4, p.width * 0.4, p.height * 0.1); 
 
-            // Body
+            // Hat
             ctx.fillStyle = '#c0392b'; // Red
-            ctx.fillRect(x, y + height * 0.6, width, height * 0.4);
+            ctx.beginPath();
+            ctx.moveTo(p.x + p.width * 0.15, p.y + p.height * 0.3);
+            ctx.lineTo(p.x + p.width * 0.5, p.y);
+            ctx.lineTo(p.x + p.width * 0.85, p.y + p.height * 0.3);
+            ctx.closePath();
+            ctx.fill();
 
-            // Belt
-            ctx.fillStyle = '#2c3e50'; // Black
-            ctx.fillRect(x, y + height * 0.7, width, height * 0.1);
-            ctx.fillStyle = '#f1c40f'; // Gold buckle
-            ctx.fillRect(x + width * 0.4, y + height * 0.7, width * 0.2, height * 0.1);
+            ctx.fillStyle = '#ecf0f1'; // White brim
+            ctx.fillRect(p.x + p.width * 0.1, p.y + p.height * 0.25, p.width * 0.8, p.height * 0.1);
+             // Pompom
+            ctx.beginPath();
+            ctx.arc(p.x + p.width * 0.5, p.y - p.height * 0.05, p.width * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Shield visual
+            if (p.hasShield) {
+                ctx.strokeStyle = '#3498db'; // Blue shield outline
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(p.x + p.width / 2, p.y + p.height / 2, p.width * 0.7, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.lineWidth = 1; // Reset
+            }
         }
 
-        // Gift Box
         function drawGift(x, y, size) {
-            const colors = ['#2ecc71', '#e74c3c', '#3498db', '#f1c40f']; // Green, Red, Blue, Yellow
+            const colors = ['#2ecc71', '#e74c3c', '#9b59b6', '#f1c40f']; // Green, Red, Purple, Yellow
             const baseColor = colors[Math.floor(Math.random() * colors.length)];
-            const ribbonColor = '#f1c40f'; // Gold ribbon
+            const ribbonColor = '#ffffff'; // White ribbon
 
             ctx.fillStyle = baseColor;
             ctx.fillRect(x, y, size, size);
             
-            // Ribbon
             ctx.fillStyle = ribbonColor;
-            ctx.fillRect(x + size * 0.4, y, size * 0.2, size); // Vertical
-            ctx.fillRect(x, y + size * 0.4, size, size * 0.2); // Horizontal
+            ctx.fillRect(x + size * 0.4, y, size * 0.2, size); 
+            ctx.fillRect(x, y + size * 0.4, size, size * 0.2); 
+            ctx.fillRect(x + size * 0.3, y + size * 0.3, size * 0.4, size * 0.4); // Knot
+        }
 
-            // Bow knot
+        function drawCoal(x, y, size) {
+            ctx.fillStyle = '#34495e'; 
+            ctx.fillRect(x, y, size, size);
+            ctx.fillStyle = '#566573';
+            ctx.fillRect(x + size * 0.1, y + size * 0.1, size * 0.8, size * 0.8);
+            ctx.fillStyle = '#2c3e50';
             ctx.fillRect(x + size * 0.3, y + size * 0.3, size * 0.4, size * 0.4);
         }
 
-        // Coal
-        function drawCoal(x, y, size) {
-            ctx.fillStyle = '#34495e'; // Dark grey
-            ctx.fillRect(x, y, size, size);
-            // Add some lighter specks for texture
-            ctx.fillStyle = '#7f8c8d'; // Lighter grey
-            ctx.fillRect(x + size * 0.2, y + size * 0.2, size * 0.3, size * 0.3);
-            ctx.fillRect(x + size * 0.5, y + size * 0.6, size * 0.2, size * 0.2);
+        function drawShield(x, y, size) {
+            ctx.fillStyle = '#f1c40f'; // Gold
+            // Star shape
+            ctx.beginPath();
+            for (let i = 0; i < 5; i++) {
+                ctx.lineTo(x + size/2 + (size/2) * Math.cos( (0.8 * i - 0.5) * Math.PI), 
+                           y + size/2 + (size/2) * Math.sin( (0.8 * i - 0.5) * Math.PI));
+                ctx.lineTo(x + size/2 + (size/4) * Math.cos( (0.8 * i - 0.1) * Math.PI), 
+                           y + size/2 + (size/4) * Math.sin( (0.8 * i - 0.1) * Math.PI));
+            }
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.strokeStyle = '#e67e22'; // Orange outline
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.lineWidth = 1;
         }
         
         // --- GAME LOGIC ---
+        function applyDifficulty() {
+            const diff = difficultyLevels[currentDifficultyIndex];
+            if (diff === 'Easy') {
+                baseItemFallSpeed = 1.5;
+                baseSpawnInterval = 1500;
+                player.lives = 4; // More lives for easy
+            } else if (diff === 'Medium') {
+                baseItemFallSpeed = 2;
+                baseSpawnInterval = 1200;
+                player.lives = 3;
+            } else { // Hard
+                baseItemFallSpeed = 2.8;
+                baseSpawnInterval = 900;
+                player.lives = 2; // Fewer lives for hard
+            }
+            difficultyBtn.textContent = `Difficulty: ${diff}`;
+        }
+
         function spawnItem() {
-            const type = Math.random() < 0.75 ? 'gift' : 'coal'; // 75% chance for gift
+            let type;
+            const rand = Math.random();
+            if (rand < 0.05 && !player.hasShield) { // 5% chance for shield if player doesn't have one
+                type = 'shield';
+            } else if (rand < 0.70 + (difficultyLevels[currentDifficultyIndex] === 'Hard' ? -0.1 : 0) ) { // More coal on hard
+                type = 'gift';
+            } else {
+                type = 'coal';
+            }
+            
             const x = Math.random() * (canvasWidth - itemSize);
             items.push({ x: x, y: -itemSize, type: type });
         }
 
-        function update() {
+        function updateGame() {
             if (gameState !== 'playing') return;
 
-            // Move player
             player.x += player.dx;
-
-            // Keep player within bounds
             if (player.x < 0) player.x = 0;
             if (player.x + player.width > canvasWidth) player.x = canvasWidth - player.width;
 
-            // Move items and check collisions
+            // Shield timer
+            if (player.hasShield) {
+                player.shieldTimer -= 16; // Roughly 1 second per 60 frames
+                if (player.shieldTimer <= 0) {
+                    player.hasShield = false;
+                }
+            }
+
             for (let i = items.length - 1; i >= 0; i--) {
                 const item = items[i];
-                item.y += itemFallSpeedBase * itemFallSpeedMultiplier;
+                item.y += baseItemFallSpeed * itemFallSpeedMultiplier;
 
-                // Collision with player
                 if (item.y + itemSize > player.y &&
                     item.y < player.y + player.height &&
                     item.x + itemSize > player.x &&
@@ -207,195 +409,240 @@
                     
                     if (item.type === 'gift') {
                         score++;
-                        scoreBoard.textContent = `Score: ${score}`;
-                        // Increase difficulty slightly
-                        itemFallSpeedMultiplier += 0.02;
-                        if (spawnInterval > 400) { // Max spawn rate
-                           spawnInterval -= 20;
+                        itemFallSpeedMultiplier += 0.015;
+                        if (currentSpawnInterval > 350) currentSpawnInterval -= 15;
+                    } else if (item.type === 'coal') {
+                        if (player.hasShield) {
+                            player.hasShield = false;
+                        } else {
+                            player.lives--;
+                            if (player.lives <= 0) {
+                                setGameState('gameOver');
+                            } else {
+                                // Brief invulnerability or screen flash? For now, just decrement.
+                            }
                         }
-                    } else { // Coal
-                        gameState = 'gameOver';
+                    } else if (item.type === 'shield') {
+                        player.hasShield = true;
+                        player.shieldTimer = 5000; // 5 seconds shield
                     }
-                    items.splice(i, 1); // Remove item
-                } 
-                // Item missed (goes off screen)
-                else if (item.y > canvasHeight) {
                     items.splice(i, 1);
-                    if (item.type === 'gift') { // Penalty for missing gift
-                        // score = Math.max(0, score - 1); // Optional penalty
-                        // scoreBoard.textContent = `Score: ${score}`;
-                    }
+                } else if (item.y > canvasHeight) {
+                    items.splice(i, 1);
                 }
             }
 
-            // Spawn new items
             const currentTime = Date.now();
-            if (currentTime - lastSpawnTime > spawnInterval) {
+            if (currentTime - lastSpawnTime > currentSpawnInterval) {
                 spawnItem();
                 lastSpawnTime = currentTime;
             }
+            updateUI();
+        }
+        
+        function updateUI() {
+            scoreBoard.textContent = `Score: ${score}`;
+            livesBoard.textContent = `Lives: ${player.lives}`;
         }
 
         function drawBackground() {
-            // Sky
-            ctx.fillStyle = '#3498db'; // Game area sky
+            ctx.fillStyle = '#3498db';
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            ctx.fillStyle = '#ecf0f1';
+            ctx.fillRect(0, canvasHeight - 15, canvasWidth, 15); // Thicker snow
 
-            // Simple snow ground
-            ctx.fillStyle = '#ecf0f1'; // White
-            ctx.fillRect(0, canvasHeight - 10, canvasWidth, 10);
-
-            // Some falling snowflakes (decorative)
+            // Snowflakes
             ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            for(let i=0; i<20; i++) {
-                const x = Math.random() * canvasWidth;
-                const y = (Math.random() * canvasHeight * 2 + Date.now()*0.01) % canvasHeight; // slow fall
-                const size = Math.random() * 3 + 1;
+            for(let i=0; i<25; i++) {
+                const x = (Math.random() * canvasWidth * 1.5 - canvasWidth * 0.25 + Date.now()*0.005 * (i%5+1)) % canvasWidth;
+                const y = (Math.random() * canvasHeight * 2 + Date.now()*0.02 * (i%3+1)) % canvasHeight;
+                const size = Math.random() * 2.5 + 1;
                 ctx.fillRect(x, y, size, size);
             }
         }
 
-        function draw() {
+        function drawGame() {
             ctx.clearRect(0, 0, canvasWidth, canvasHeight);
             drawBackground();
-
-            if (gameState === 'start') {
-                ctx.fillStyle = '#ecf0f1';
-                ctx.textAlign = 'center';
-                ctx.font = '24px "Press Start 2P"';
-                ctx.fillText('Fusnoel Catch!', canvasWidth / 2, canvasHeight / 3);
-                ctx.font = '16px "Press Start 2P"';
-                ctx.fillText('Collect Gifts, Avoid Coal!', canvasWidth / 2, canvasHeight / 2);
-                ctx.fillText('Press Enter or Tap to Start', canvasWidth / 2, canvasHeight / 2 + 40);
-            } else if (gameState === 'playing') {
-                drawPlayer(player.x, player.y, player.width, player.height);
-                items.forEach(item => {
-                    if (item.type === 'gift') {
-                        drawGift(item.x, item.y, itemSize);
-                    } else {
-                        drawCoal(item.x, item.y, itemSize);
-                    }
-                });
-            } else if (gameState === 'gameOver') {
-                ctx.fillStyle = '#e74c3c';
-                ctx.textAlign = 'center';
-                ctx.font = '30px "Press Start 2P"';
-                ctx.fillText('Game Over!', canvasWidth / 2, canvasHeight / 3);
-                ctx.fillStyle = '#ecf0f1';
-                ctx.font = '20px "Press Start 2P"';
-                ctx.fillText(`Final Score: ${score}`, canvasWidth / 2, canvasHeight / 2);
-                ctx.font = '16px "Press Start 2P"';
-                ctx.fillText('Press Enter or Tap to Retry', canvasWidth / 2, canvasHeight / 2 + 50);
-            }
+            drawPlayer(player);
+            items.forEach(item => {
+                if (item.type === 'gift') drawGift(item.x, item.y, itemSize);
+                else if (item.type === 'coal') drawCoal(item.x, item.y, itemSize);
+                else if (item.type === 'shield') drawShield(item.x, item.y, itemSize + 4); // Slightly larger
+            });
         }
-
+        
         function gameLoop() {
-            update();
-            draw();
+            if (gameState === 'playing') {
+                updateGame();
+            }
+            // Always draw, draw function will handle what to show based on state
+            // (though overlays are now DOM, so canvas drawing is mainly for 'playing')
+            if (gameState === 'playing' || gameState === 'paused' || gameState === 'gameOver') { // Draw game behind overlays
+                 drawGame();
+            } else if (gameState === 'menu' || gameState === 'instructions') {
+                drawBackground(); // Draw a static background for menus
+            }
+
+
             animationFrameId = requestAnimationFrame(gameLoop);
         }
 
         function resetGame() {
+            applyDifficulty(); // Sets lives based on difficulty
             player.x = canvasWidth / 2 - playerWidth / 2;
             player.dx = 0;
+            player.hasShield = false;
+            player.shieldTimer = 0;
+            
             items = [];
             score = 0;
             itemFallSpeedMultiplier = 1;
-            spawnInterval = spawnIntervalBase;
+            currentSpawnInterval = baseSpawnInterval;
             lastSpawnTime = Date.now();
-            scoreBoard.textContent = `Score: ${score}`;
-            gameState = 'playing';
+            updateUI();
+        }
+
+        function setGameState(newState) {
+            gameState = newState;
+            
+            // Hide all overlays first
+            mainMenu.classList.add('hidden');
+            instructionsOverlay.classList.add('hidden');
+            pauseOverlay.classList.add('hidden');
+            gameOverOverlay.classList.add('hidden');
+            mobileControlsDiv.classList.add('hidden'); // Hide mobile controls by default
+
+            if (isTouchDevice()) { // Show mobile controls only when playing
+                 if (newState === 'playing') mobileControlsDiv.classList.remove('hidden');
+            }
+
+            switch(newState) {
+                case 'menu':
+                    mainMenu.classList.remove('hidden');
+                    loadHighScore(); // Ensure high score is up-to-date on menu
+                    highScoreDisplayMainMenu.textContent = `High Score: ${highScore}`;
+                    break;
+                case 'instructions':
+                    instructionsOverlay.classList.remove('hidden');
+                    break;
+                case 'playing':
+                    // Overlays handled by their own logic
+                    break;
+                case 'paused':
+                    pauseOverlay.classList.remove('hidden');
+                    break;
+                case 'gameOver':
+                    gameOverOverlay.classList.remove('hidden');
+                    finalScoreDisplay.textContent = `Final Score: ${score}`;
+                    if (score > highScore) {
+                        highScore = score;
+                        saveHighScore();
+                    }
+                    highScoreDisplayGameOver.textContent = `High Score: ${highScore}`;
+                    break;
+            }
         }
 
         function startGame() {
-            if (gameState === 'playing') return;
             resetGame();
-            if (!animationFrameId) { // Ensure loop only starts once
-                gameLoop();
+            setGameState('playing');
+        }
+        
+        function loadHighScore() {
+            const savedScore = localStorage.getItem('fusnoelProHighScore');
+            if (savedScore) {
+                highScore = parseInt(savedScore, 10);
+            } else {
+                highScore = 0;
             }
+        }
+
+        function saveHighScore() {
+            localStorage.setItem('fusnoelProHighScore', highScore.toString());
         }
 
         // --- EVENT LISTENERS ---
         function handleKeyDown(e) {
             if (gameState === 'playing') {
-                if (e.key === 'ArrowLeft' || e.key === 'a') {
-                    player.dx = -playerSpeed;
-                } else if (e.key === 'ArrowRight' || e.key === 'd') {
-                    player.dx = playerSpeed;
-                }
-            }
-            if (e.key === 'Enter' && (gameState === 'start' || gameState === 'gameOver')) {
+                if (e.key === 'ArrowLeft' || e.key === 'a') player.dx = -playerSpeed;
+                else if (e.key === 'ArrowRight' || e.key === 'd') player.dx = playerSpeed;
+                else if (e.key === 'p' || e.key === 'P') setGameState('paused');
+            } else if (gameState === 'paused' && (e.key === 'p' || e.key === 'P' || e.key === 'Enter')) {
+                setGameState('playing');
+            } else if (gameState === 'gameOver' && e.key === 'Enter') {
+                startGame();
+            } else if (gameState === 'menu' && e.key === 'Enter') {
                 startGame();
             }
         }
 
         function handleKeyUp(e) {
             if (gameState === 'playing') {
-                if ((e.key === 'ArrowLeft' || e.key === 'a') && player.dx < 0) {
-                    player.dx = 0;
-                } else if ((e.key === 'ArrowRight' || e.key === 'd') && player.dx > 0) {
-                    player.dx = 0;
-                }
+                if ((e.key === 'ArrowLeft' || e.key === 'a') && player.dx < 0) player.dx = 0;
+                else if ((e.key === 'ArrowRight' || e.key === 'd') && player.dx > 0) player.dx = 0;
             }
         }
         
-        // Touch controls
-        const leftButton = document.getElementById('leftButton');
-        const rightButton = document.getElementById('rightButton');
-        const mobileControlsDiv = document.getElementById('mobileControls');
+        // Button Listeners
+        startGameBtn.addEventListener('click', startGame);
+        
+        difficultyBtn.addEventListener('click', () => {
+            currentDifficultyIndex = (currentDifficultyIndex + 1) % difficultyLevels.length;
+            applyDifficulty(); // Updates text and game parameters for next game
+        });
 
-        // Check for touch device more reliably
+        instructionsBtn.addEventListener('click', () => setGameState('instructions'));
+        backToMenuBtn.addEventListener('click', () => setGameState('menu'));
+        
+        resumeGameBtn.addEventListener('click', () => setGameState('playing'));
+        quitToMenuBtn.addEventListener('click', () => setGameState('menu'));
+
+        retryBtn.addEventListener('click', startGame);
+        gameOverToMenuBtn.addEventListener('click', () => setGameState('menu'));
+
+
+        // Touch controls
         function isTouchDevice() {
-            return (('ontouchstart' in window) ||
-                (navigator.maxTouchPoints > 0) ||
-                (navigator.msMaxTouchPoints > 0));
+            return (('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
         }
 
         if (isTouchDevice()) {
-            mobileControlsDiv.classList.add('mobile-controls-visible');
+            // Mobile controls are initially hidden, shown by setGameState
+        }
+        
+        function createTouchHandler(action) {
+            return (e) => {
+                e.preventDefault();
+                if (gameState === 'playing') {
+                    if (action === 'leftDown') player.dx = -playerSpeed;
+                    else if (action === 'rightDown') player.dx = playerSpeed;
+                    else if (action === 'leftUp' && player.dx < 0) player.dx = 0;
+                    else if (action === 'rightUp' && player.dx > 0) player.dx = 0;
+                }
+            };
         }
 
-        leftButton.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // Prevent click, scroll, zoom
-            if (gameState === 'playing') player.dx = -playerSpeed;
-        }, { passive: false });
-        leftButton.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            if (gameState === 'playing' && player.dx < 0) player.dx = 0;
-        }, { passive: false });
+        leftButton.addEventListener('touchstart', createTouchHandler('leftDown'), { passive: false });
+        leftButton.addEventListener('touchend', createTouchHandler('leftUp'), { passive: false });
+        rightButton.addEventListener('touchstart', createTouchHandler('rightDown'), { passive: false });
+        rightButton.addEventListener('touchend', createTouchHandler('rightUp'), { passive: false });
 
-        rightButton.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            if (gameState === 'playing') player.dx = playerSpeed;
-        }, { passive: false });
-        rightButton.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            if (gameState === 'playing' && player.dx > 0) player.dx = 0;
-        }, { passive: false });
-
-        // Canvas click/tap for starting/restarting
-        canvas.addEventListener('click', () => {
-            if (gameState === 'start' || gameState === 'gameOver') {
-                startGame();
-            }
+        pauseButtonMobile.addEventListener('click', () => { // Click for simplicity, could be touchstart
+            if (gameState === 'playing') setGameState('paused');
+            else if (gameState === 'paused') setGameState('playing');
         });
-         canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // Important for mobile to prevent double actions
-            if (gameState === 'start' || gameState === 'gameOver') {
-                startGame();
-            }
-        }, { passive: false });
 
 
         document.addEventListener('keydown', handleKeyDown);
         document.addEventListener('keyup', handleKeyUp);
 
-        // Initial Draw (Start Screen)
-        draw(); 
-        // If you want the game to start immediately without a start screen, call startGame() here
-        // and change initial gameState to 'playing'.
-        // For now, we show the start screen.
-    </script>
+        // --- INITIALIZATION ---
+        loadHighScore();
+        applyDifficulty(); // Set initial difficulty params
+        setGameState('menu'); // Start at the main menu
+        gameLoop(); // Start the master game loop
 
+    </script>
 </body>
 </html>
