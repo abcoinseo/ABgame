@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Art Canvas Pro</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            background-color: #333;
+            color: #eee;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden; /* Prevent body scroll, canvas handles its own */
+        }
+
+        .auth-container, .app-container {
+            background-color: #444;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            margin-top: 20px;
+        }
+
+        .auth-container h2, .app-container h2 {
+            text-align: center;
+            margin-top: 0;
+        }
+
+        input[type="email"], input[type="password"], input[type="color"], button {
+            display: block;
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background-color: #555;
+            color: #eee;
+        }
+        input[type="color"] {
+            width: 50px;
+            height: 50px;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.secondary {
+            background-color: #6c757d;
+        }
+        button.secondary:hover {
+            background-color: #545b62;
+        }
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        .app-container {
+            display: none; /* Hidden by default */
+            width: 95vw;
+            max-width: 1200px;
+        }
+
+        #canvas-area {
+            position: relative;
+            width: 100%;
+            height: 70vh; /* Adjust as needed */
+            overflow: hidden; /* Crucial for panning */
+            cursor: crosshair;
+            background-color: #282828; /* Darker background for canvas visibility */
+            border: 1px solid #555;
+        }
+
+        #pixelCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: transparent; /* Let #canvas-area handle bg for grid */
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px 0;
+            flex-wrap: wrap;
+        }
+        .tool-group {
+            display: flex;
+            align-items: center;
+            margin: 5px;
+        }
+        .tool-group label { margin-right: 5px; }
+        .tool-group button { width: auto; padding: 8px 12px; margin-left: 5px;}
+
+        #userInfo {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #3a3a3a;
+            border-radius: 4px;
+        }
+        .hidden { display: none !important; }
+        #loading {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading" class="hidden">Loading...</div>
+
+    <div id="authContainer" class="auth-container">
+        <h2>Login / Register</h2>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <button id="loginBtn">Login</button>
+        <button id="registerBtn">Register</button>
+        <p id="authError" style="color: red; text-align: center;"></p>
+    </div>
+
+    <div id="appContainer" class="app-container">
+        <div id="userInfo">
+            Logged in as: <span id="userEmailDisplay"></span>
+            <button id="logoutBtn" class="secondary">Logout</button>
+        </div>
+        <h2>Pixel Art Canvas</h2>
+        <div class="controls">
+            <div class="tool-group">
+                <label for="colorPicker">Color:</label>
+                <input type="color" id="colorPicker" value="#FF0000">
+            </div>
+            <div class="tool-group">
+                <span>Tool:</span>
+                <button id="drawToolBtn" class="active-tool">Draw</button>
+                <button id="eraseToolBtn">Erase</button>
+            </div>
+             <div class="tool-group">
+                <button id="claimAreaBtn">Claim First 10x10 Area (Free)</button>
+            </div>
+            <div class="tool-group">
+                Zoom: <span id="zoomLevelDisplay">1x</span>
+            </div>
+        </div>
+        <div id="canvas-area">
+            <canvas id="pixelCanvas"></canvas>
+        </div>
+        <p style="text-align:center; font-size: 0.9em; margin-top: 10px;">
+            Scroll to Zoom. Middle-click/Alt-click + Drag to Pan. Click to draw/erase.
+        </p>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script>
+        // --- Firebase Configuration ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBX387aOsaNl3Y8CPi06fnD4ufQfCLbFrE", // YOURS
+            authDomain: "clint-projact.firebaseapp.com", // YOURS
+            databaseURL: "https://clint-projact-default-rtdb.asia-southeast1.firebasedatabase.app", // YOURS
+            projectId: "clint-projact", // YOURS
+            storageBucket: "clint-projact.firebasestorage.app", // YOURS
+            messagingSenderId: "224509850913", // YOURS
+            appId: "1:224509850913:web:a832caad986d4bc2d03a60" // YOURS
+        };
+
+        // --- Initialize Firebase ---
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // --- DOM Elements ---
+        const loadingIndicator = document.getElementById('loading');
+        const authContainer = document.getElementById('authContainer');
+        const appContainer = document.getElementById('appContainer');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const authErrorEl = document.getElementById('authError');
+        const userEmailDisplay = document.getElementById('userEmailDisplay');
+
+        const canvasArea = document.getElementById('canvas-area');
+        const canvas = document.getElementById('pixelCanvas');
+        const ctx = canvas.getContext('2d');
+        const colorPicker = document.getElementById('colorPicker');
+        const drawToolBtn = document.getElementById('drawToolBtn');
+        const eraseToolBtn = document.getElementById('eraseToolBtn');
+        const claimAreaBtn = document.getElementById('claimAreaBtn');
+        const zoomLevelDisplay = document.getElementById('zoomLevelDisplay');
+
+        // --- App State ---
+        let currentUser = null;
+        let currentTool = 'draw'; // 'draw' or 'erase'
+        let currentColor = '#FF0000';
+        const PIXEL_SIZE = 10; // The logical size of one pixel on the grid
+        let zoom = 1;
+        let panX = 0;
+        let panY = 0;
+        let isPanning = false;
+        let lastPanPosition = { x: 0, y: 0 };
+        let pixelsData = {}; // { "x_y": { color: "#...", owner: "uid" } }
+        let ownedAreasData = {}; // { "uid": [{ x:topLeftX, y:topLeftY, size:10}, ...] }
+        let userOwnedAreas = []; // Areas owned by the current user
+
+        // --- Utility Functions ---
+        function showLoading(show) {
+            loadingIndicator.classList.toggle('hidden', !show);
+        }
+        function displayAuthError(message) {
+            authErrorEl.textContent = message;
+        }
+        function setActiveToolButton(tool) {
+            drawToolBtn.classList.remove('active-tool');
+            eraseToolBtn.classList.remove('active-tool');
+            if (tool === 'draw') drawToolBtn.classList.add('active-tool');
+            else if (tool === 'erase') eraseToolBtn.classList.add('active-tool');
+        }
+
+        // --- Authentication ---
+        auth.onAuthStateChanged(user => {
+            showLoading(true);
+            if (user) {
+                currentUser = user;
+                userEmailDisplay.textContent = user.email;
+                authContainer.classList.add('hidden');
+                appContainer.style.display = 'flex'; // Use flex for centering
+                appContainer.style.flexDirection = 'column'; // Stack vertically
+                loadInitialData();
+            } else {
+                currentUser = null;
+                userEmailDisplay.textContent = '';
+                authContainer.classList.remove('hidden');
+                appContainer.style.display = 'none';
+                pixelsData = {}; // Clear data on logout
+                ownedAreasData = {};
+                userOwnedAreas = [];
+                showLoading(false);
+            }
+        });
+
+        registerBtn.addEventListener('click', () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            displayAuthError('');
+            showLoading(true);
+            auth.createUserWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    console.log('Registered:', userCredential.user);
+                    // You could give a "bonus" here by writing to the database
+                    // For now, it's just a regular registration.
+                    // The "claim free area" button will handle the first area.
+                    db.ref(`users/${userCredential.user.uid}/profile`).set({
+                        email: userCredential.user.email,
+                        firstAreaClaimed: false
+                    });
+                })
+                .catch(error => {
+                    console.error('Registration error:', error);
+                    displayAuthError(error.message);
+                }).finally(() => showLoading(false));
+        });
+
+        loginBtn.addEventListener('click', () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            displayAuthError('');
+            showLoading(true);
+            auth.signInWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    console.log('Logged in:', userCredential.user);
+                })
+                .catch(error => {
+                    console.error('Login error:', error);
+                    displayAuthError(error.message);
+                }).finally(() => showLoading(false));
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            auth.signOut().then(() => console.log('Logged out'));
+        });
+
+        // --- Canvas Logic ---
+        function setupCanvas() {
+            // Set canvas physical size to match its container
+            canvas.width = canvasArea.clientWidth;
+            canvas.height = canvasArea.clientHeight;
+            redrawCanvas();
+        }
+
+        function worldToScreen(worldX, worldY) {
+            return {
+                x: (worldX - panX) * zoom,
+                y: (worldY - panY) * zoom
+            };
+        }
+
+        function screenToWorld(screenX, screenY) {
+            return {
+                x: (screenX / zoom) + panX,
+                y: (screenY / zoom) + panY
+            };
+        }
+
+        function getGridCoords(mouseX, mouseY) {
+            const worldPos = screenToWorld(mouseX, mouseY);
+            return {
+                x: Math.floor(worldPos.x / PIXEL_SIZE),
+                y: Math.floor(worldPos.y / PIXEL_SIZE)
+            };
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = 'rgba(128,128,128,0.3)'; // Lighter grid for dark bg
+            ctx.lineWidth = 1;
+
+            const scaledPixelSize = PIXEL_SIZE * zoom;
+            if (scaledPixelSize < 4) return; // Don't draw grid if too small
+
+            const worldTopLeft = screenToWorld(0, 0);
+            const worldBottomRight = screenToWorld(canvas.width, canvas.height);
+
+            const startX = Math.floor(worldTopLeft.x / PIXEL_SIZE) * PIXEL_SIZE;
+            const startY = Math.floor(worldTopLeft.y / PIXEL_SIZE) * PIXEL_SIZE;
+
+            for (let x = startX; x < worldBottomRight.x; x += PIXEL_SIZE) {
+                const screenPos = worldToScreen(x, worldTopLeft.y);
+                ctx.beginPath();
+                ctx.moveTo(screenPos.x, 0);
+                ctx.lineTo(screenPos.x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = startY; y < worldBottomRight.y; y += PIXEL_SIZE) {
+                const screenPos = worldToScreen(worldTopLeft.x, y);
+                ctx.beginPath();
+                ctx.moveTo(0, screenPos.y);
+                ctx.lineTo(canvas.width, screenPos.y);
+                ctx.stroke();
+            }
+        }
+
+        function drawPixels() {
+            const scaledPixelSize = PIXEL_SIZE * zoom;
+            const worldTopLeft = screenToWorld(0, 0);
+            const worldBottomRight = screenToWorld(canvas.width, canvas.height);
+
+            for (const key in pixelsData) {
+                const [gx, gy] = key.split('_').map(Number);
+                const pixel = pixelsData[key];
+
+                // Cull pixels outside the viewport
+                const worldPixelX = gx * PIXEL_SIZE;
+                const worldPixelY = gy * PIXEL_SIZE;
+
+                if (worldPixelX + PIXEL_SIZE < worldTopLeft.x || worldPixelX > worldBottomRight.x ||
+                    worldPixelY + PIXEL_SIZE < worldTopLeft.y || worldPixelY > worldBottomRight.y) {
+                    continue;
+                }
+
+                const screenPos = worldToScreen(worldPixelX, worldPixelY);
+                ctx.fillStyle = pixel.color;
+                ctx.fillRect(screenPos.x, screenPos.y, scaledPixelSize, scaledPixelSize);
+
+                // Optionally draw owner indication (e.g., if part of an owned area)
+                // This can get complex if many areas overlap or for fine-grained ownership visual
+            }
+        }
+
+        function drawOwnedAreaBorders() {
+            if (!currentUser) return;
+            const scaledPixelSize = PIXEL_SIZE * zoom;
+
+            // Draw all owned areas with a subtle border
+            for(const uid in ownedAreasData) {
+                ownedAreasData[uid].forEach(area => {
+                    const screenPos = worldToScreen(area.x * PIXEL_SIZE, area.y * PIXEL_SIZE);
+                    const areaSizeScreen = area.size * PIXEL_SIZE * zoom;
+                    ctx.strokeStyle = uid === currentUser.uid ? 'rgba(0, 255, 0, 0.7)' : 'rgba(255, 255, 0, 0.4)'; // Green for own, Yellow for others
+                    ctx.lineWidth = Math.max(1, 2 * zoom);
+                    ctx.strokeRect(screenPos.x, screenPos.y, areaSizeScreen, areaSizeScreen);
+                });
+            }
+        }
+
+
+        function redrawCanvas() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear previous frame
+            drawGrid();
+            drawPixels();
+            drawOwnedAreaBorders();
+            zoomLevelDisplay.textContent = `${zoom.toFixed(2)}x`;
+        }
+
+        // Canvas Event Handlers
+        canvasArea.addEventListener('mousedown', (e) => {
+            if (e.button === 0) { // Left click
+                handleCanvasClick(e);
+            } else if (e.button === 1 || (e.button === 0 && e.altKey)) { // Middle click or Alt+Left Click
+                isPanning = true;
+                lastPanPosition = { x: e.clientX, y: e.clientY };
+                canvasArea.style.cursor = 'grabbing';
+                e.preventDefault(); // Prevent default middle-click scroll
+            }
+        });
+
+        canvasArea.addEventListener('mousemove', (e) => {
+            if (isPanning) {
+                const dx = e.clientX - lastPanPosition.x;
+                const dy = e.clientY - lastPanPosition.y;
+                lastPanPosition = { x: e.clientX, y: e.clientY };
+
+                panX -= dx / zoom;
+                panY -= dy / zoom;
+                redrawCanvas();
+            } else if (e.buttons === 1) { // Left button held down (dragging)
+                 handleCanvasClick(e); // Allow drawing while dragging
+            }
+        });
+
+        canvasArea.addEventListener('mouseup', (e) => {
+            if (e.button === 1 || (e.button === 0 && e.altKey && isPanning)) {
+                isPanning = false;
+                canvasArea.style.cursor = 'crosshair';
+            }
+        });
+        canvasArea.addEventListener('mouseleave', () => { // Stop panning if mouse leaves area
+            if (isPanning) {
+                isPanning = false;
+                canvasArea.style.cursor = 'crosshair';
+            }
+        });
+
+
+        canvasArea.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const rect = canvasArea.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const worldPosBeforeZoom = screenToWorld(mouseX, mouseY);
+
+            const zoomFactor = 1.1;
+            if (e.deltaY < 0) { // Zoom in
+                zoom *= zoomFactor;
+            } else { // Zoom out
+                zoom /= zoomFactor;
+            }
+            zoom = Math.max(0.1, Math.min(zoom, 20)); // Clamp zoom level
+
+            const worldPosAfterZoom = screenToWorld(mouseX, mouseY);
+
+            panX += (worldPosBeforeZoom.x - worldPosAfterZoom.x);
+            panY += (worldPosBeforeZoom.y - worldPosAfterZoom.y);
+
+            redrawCanvas();
+        });
+
+        function handleCanvasClick(e) {
+            if (!currentUser) return;
+
+            const rect = canvasArea.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const { x: gridX, y: gridY } = getGridCoords(mouseX, mouseY);
+            const pixelKey = `${gridX}_${gridY}`;
+
+            // Check if this pixel is in an owned area
+            let canEdit = true;
+            let pixelOwner = null; // Who owns this specific pixel (if it's in an area)
+
+            for (const uid in ownedAreasData) {
+                for (const area of ownedAreasData[uid]) {
+                    if (gridX >= area.x && gridX < area.x + area.size &&
+                        gridY >= area.y && gridY < area.y + area.size) {
+                        pixelOwner = uid;
+                        break;
+                    }
+                }
+                if (pixelOwner) break;
+            }
+            
+            if (pixelOwner && pixelOwner !== currentUser.uid) {
+                alert("This pixel is in an area owned by another user. You cannot edit it.");
+                canEdit = false;
+            }
+
+
+            if (canEdit) {
+                if (currentTool === 'draw') {
+                    const pixelData = { color: currentColor, owner: currentUser.uid,  timestamp: firebase.database.ServerValue.TIMESTAMP };
+                     if (pixelOwner) pixelData.areaOwner = pixelOwner; // If in an area, mark who owns that area
+                    db.ref(`pixels/${pixelKey}`).set(pixelData);
+                    // pixelsData[pixelKey] = pixelData; // Local update handled by Firebase listener
+                } else if (currentTool === 'erase') {
+                    db.ref(`pixels/${pixelKey}`).remove();
+                    // delete pixelsData[pixelKey]; // Local update handled by Firebase listener
+                }
+                // redrawCanvas(); // Firebase listener will trigger redraw
+            }
+        }
+
+        // --- Tool Selection ---
+        colorPicker.addEventListener('change', (e) => {
+            currentColor = e.target.value;
+        });
+        drawToolBtn.addEventListener('click', () => {
+            currentTool = 'draw';
+            setActiveToolButton('draw');
+        });
+        eraseToolBtn.addEventListener('click', () => {
+            currentTool = 'erase';
+            setActiveToolButton('erase');
+        });
+
+        // --- "Ninja Area" Claiming ---
+        claimAreaBtn.addEventListener('click', async () => {
+            if (!currentUser) return;
+            claimAreaBtn.disabled = true;
+
+            const userProfileRef = db.ref(`users/${currentUser.uid}/profile`);
+            try {
+                const snapshot = await userProfileRef.once('value');
+                const profile = snapshot.val();
+
+                if (profile && profile.firstAreaClaimed) {
+                    alert("You have already claimed your free area.");
+                    claimAreaBtn.disabled = false;
+                    return;
+                }
+
+                // Find an unowned 10x10 spot (simple scan from origin for PoC)
+                // A real system needs a more robust way to find/allocate space
+                let foundSpot = false;
+                let claimX = 0, claimY = 0;
+                const areaSize = 10;
+
+                // Check existing owned areas to find a free spot. This is a naive search.
+                // For a production system, this would need a more sophisticated allocation strategy.
+                outerLoop:
+                for (let y = 0; y < 100; y += areaSize) { // Search a 1000x1000 world grid
+                    for (let x = 0; x < 100; x += areaSize) {
+                        let isSpotFree = true;
+                        for(const uid in ownedAreasData) {
+                            for(const area of ownedAreasData[uid]) {
+                                // Basic AABB collision check
+                                if (x < area.x + area.size && x + areaSize > area.x &&
+                                    y < area.y + area.size && y + areaSize > area.y) {
+                                    isSpotFree = false;
+                                    break;
+                                }
+                            }
+                            if (!isSpotFree) break;
+                        }
+                        if (isSpotFree) {
+                            claimX = x;
+                            claimY = y;
+                            foundSpot = true;
+                            break outerLoop;
+                        }
+                    }
+                }
+
+                if (!foundSpot) {
+                    alert("Could not find a free area automatically. (PoC limitation)");
+                    claimAreaBtn.disabled = false;
+                    return;
+                }
+
+                const newArea = { x: claimX, y: claimY, size: areaSize, owner: currentUser.uid };
+                
+                // Use push to get a unique key for the area under the user
+                const userOwnedAreasRef = db.ref(`users/${currentUser.uid}/ownedAreas`);
+                const newAreaRef = userOwnedAreasRef.push();
+                await newAreaRef.set(newArea);
+                
+                // Also update the global list of owned areas for easier lookup by all clients
+                // The key here could be the user's UID + some unique ID for the area, or just the push key
+                await db.ref(`allOwnedAreas/${newAreaRef.key}`).set({...newArea, ownerUid: currentUser.uid});
+
+
+                await userProfileRef.update({ firstAreaClaimed: true });
+
+                alert(`You claimed a 10x10 area at (${claimX}, ${claimY})! Cost: $0.1 (Free for first time)`);
+                // Local update will be handled by Firebase listener for ownedAreas
+                claimAreaBtn.textContent = "First Area Claimed";
+
+            } catch (error) {
+                console.error("Error claiming area:", error);
+                alert("Error claiming area. See console.");
+                claimAreaBtn.disabled = false;
+            }
+        });
+
+
+        // --- Firebase Data Sync ---
+        function loadInitialData() {
+            showLoading(true);
+            // Listen for pixel changes
+            db.ref('pixels').on('value', snapshot => {
+                pixelsData = snapshot.val() || {};
+                redrawCanvas();
+                showLoading(false); // Assuming this is the last major load
+            }, error => {
+                console.error("Error loading pixels:", error);
+                showLoading(false);
+            });
+
+            // Listen for changes to all owned areas
+            // This structure assumes allOwnedAreas/{areaKey}: {x, y, size, ownerUid}
+            db.ref('allOwnedAreas').on('value', snapshot => {
+                const allAreas = snapshot.val() || {};
+                ownedAreasData = {}; // Reset and rebuild
+                for (const areaKey in allAreas) {
+                    const area = allAreas[areaKey];
+                    if (!ownedAreasData[area.ownerUid]) {
+                        ownedAreasData[area.ownerUid] = [];
+                    }
+                    ownedAreasData[area.ownerUid].push({key: areaKey, ...area});
+                }
+                
+                // Update current user's specific areas and claim button status
+                if (currentUser && ownedAreasData[currentUser.uid]) {
+                    userOwnedAreas = ownedAreasData[currentUser.uid];
+                    const hasClaimed = userOwnedAreas.length > 0; // Simplified check
+                     db.ref(`users/${currentUser.uid}/profile/firstAreaClaimed`).once('value').then(snap => {
+                        if(snap.val() === true) {
+                            claimAreaBtn.textContent = "First Area Claimed";
+                            claimAreaBtn.disabled = true;
+                        } else {
+                            claimAreaBtn.textContent = "Claim First 10x10 Area (Free)";
+                            claimAreaBtn.disabled = false;
+                        }
+                    });
+                } else if (currentUser) {
+                    userOwnedAreas = [];
+                     db.ref(`users/${currentUser.uid}/profile/firstAreaClaimed`).once('value').then(snap => {
+                        if(snap.val() === true) { // Still check profile, maybe area was deleted
+                            claimAreaBtn.textContent = "First Area Claimed";
+                            claimAreaBtn.disabled = true;
+                        } else {
+                            claimAreaBtn.textContent = "Claim First 10x10 Area (Free)";
+                            claimAreaBtn.disabled = false;
+                        }
+                    });
+                }
+
+                redrawCanvas();
+            }, error => {
+                console.error("Error loading owned areas:", error);
+            });
+        }
+
+
+        // --- Initial Setup ---
+        window.addEventListener('load', () => {
+            setupCanvas(); // Initial setup
+            setActiveToolButton(currentTool);
+            // Other initializations if auth state is already known (handled by onAuthStateChanged)
+        });
+        window.addEventListener('resize', setupCanvas); // Re-setup on resize
+
+    </script>
+</body>
+</html>
